@@ -18,7 +18,9 @@
 
 ---
 
-> **DreamLayer Eval and DreamLayer AI are two different things.** DreamLayer Eval (this repository) is the open-source benchmarking project. [DreamLayer AI](https://dreamlayer.io/) is the image generation and editing platform from the same team, used in the browser and through an [API, CLI, and MCP server](https://dreamlayer.io/agent). Project page: [dreamlayer.io/opensource](https://dreamlayer.io/opensource).
+> **DreamLayer Eval and DreamLayer AI are two separate products.** DreamLayer Eval, this repository, is a free and open-source toolkit for evaluating and comparing image and video generation models. The project page for this repository is [dreamlayer.io/opensource](https://dreamlayer.io/opensource).
+>
+> [DreamLayer AI](https://dreamlayer.io/) is an AI agent for image generation and editing. It understands what you’re trying to create, selects the right models for the task, and handles the routing and orchestration for you. You can use it on the web or integrate it into your own workflows through the [API, CLI, or MCP server](https://dreamlayer.io/agent) with tools like Claude Code, Cursor, and Codex.
 
 ## What is DreamLayer Eval?
 
