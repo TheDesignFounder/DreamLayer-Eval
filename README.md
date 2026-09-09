@@ -1,4 +1,4 @@
-<h1 align="center">DreamLayer AI: Open-Source Benchmarking for Image and Video Diffusion Models</h1>
+<h1 align="center">DreamLayer Eval: Open-Source Benchmarking for Image and Video Diffusion Models</h1>
 <p align="center">
   <strong>Automate prompts, seeds, metrics, and reproducible run logging.</strong><br>
   Built for AI researchers, labs, and developers to evaluate image and video diffusion models faster and compare results consistently.
@@ -18,14 +18,16 @@
 
 ---
 
-## What is DreamLayer AI?
+> **DreamLayer Eval and DreamLayer AI are two different things.** DreamLayer Eval (this repository) is the open-source benchmarking project. [DreamLayer AI](https://dreamlayer.io/) is the image generation and editing platform from the same team, used in the browser and through an [API, CLI, and MCP server](https://dreamlayer.io/agent). Project page: [dreamlayer.io/opensource](https://dreamlayer.io/opensource).
 
-DreamLayer AI is an open-source benchmarking and evaluation platform for image generation models and video generation models. It automates prompts, seeds, metrics, configs, and reproducible run logging so researchers and developers can compare model quality faster and more consistently. It runs locally with a React frontend, Flask-based services, SQLite run storage, and ComfyUI integration for image workflows.
+## What is DreamLayer Eval?
+
+DreamLayer Eval is an open-source benchmarking and evaluation platform for image generation models and video generation models. It automates prompts, seeds, metrics, configs, and reproducible run logging so researchers and developers can compare model quality faster and more consistently. It runs locally with a React frontend, Flask-based services, SQLite run storage, and ComfyUI integration for image workflows.
 
 Compare model outputs across prompts, seeds, configs, and metrics with reproducible run logging.
 
 ## Who is this for?
-DreamLayer AI is built for:
+DreamLayer Eval is built for:
 - **AI researchers** comparing diffusion models across prompts, seeds, and metrics
 - **ML Engineers** evaluating image and video generation quality
 - **Labs and teams** building internal benchmarking workflows for generative models
@@ -179,7 +181,7 @@ python scripts/fetch_datasets.py
 
 ---
 
-## Why DreamLayer AI?                                                                                                                              
+## Why DreamLayer Eval?                                                                                                                              
                                                                                                                                                      
   | 🔍 Feature | 🚀 How it's better |                                                                                                                
   | --- | --- |
@@ -257,12 +259,12 @@ All contributions code, docs, art, tutorials—are welcome!
 
 ## License
 
-DreamLayer AI will ship under the GPL-3.0 license when the code is released.  
+DreamLayer Eval is released under the GPL-3.0 license. See [LICENSE](LICENSE).  
 All trademarks and closed-source models referenced belong to their respective owners.
 
 ## 🧪 Testing
 
-DreamLayer AI includes a comprehensive test suite covering all functionality including ClipScore integration, database operations, and API endpoints.
+DreamLayer Eval includes a comprehensive test suite covering all functionality including ClipScore integration, database operations, and API endpoints.
 
 ### Quick Start Testing
 
@@ -329,59 +331,59 @@ Install with: `pip install -r tests/requirements.txt`
 
 ## FAQ
 
-### Does DreamLayer support CLIPScore, FID, LPIPS, SSIM, and PSNR?
+### Does DreamLayer Eval support CLIPScore, FID, LPIPS, SSIM, and PSNR?
 Yes. All five are fully implemented and persisted to SQLite. CLIPScore computes live during image generation. FID runs on demand against a reference image set. Video SSIM, Video PSNR, and Video LPIPS run on demand against a reference video. Batch backfill endpoints recompute missing metrics across the full run history.
 
-### How is DreamLayer different from ComfyUI?
-ComfyUI is a node-based generation interface. DreamLayer is a benchmarking workbench built on top of ComfyUI for image workflows, paired with dedicated Flask services for run logging, metric computation, comparison APIs, and CSV or ZIP exports. ComfyUI handles "make this image." DreamLayer handles "benchmark these models across these prompts and seeds, log everything, and let me compare results."
+### How is DreamLayer Eval different from ComfyUI?
+ComfyUI is a node-based generation interface. DreamLayer Eval is a benchmarking workbench built on top of ComfyUI for image workflows, paired with dedicated Flask services for run logging, metric computation, comparison APIs, and CSV or ZIP exports. ComfyUI handles "make this image." DreamLayer Eval handles "benchmark these models across these prompts and seeds, log everything, and let me compare results."
 
-### How is DreamLayer different from Automatic1111, InvokeAI, or Forge?
-Automatic1111, InvokeAI, and Forge are excellent generation UIs. DreamLayer is also a great generation UIs, but it adds benchmarking infrastructure on top: persistent SQLite logging with full prompt, seed, sampler, and config metadata; built-in image and video quality metrics; side-by-side run comparison; batch metric backfills; and CSV or ZIP exports for leaderboard submission. None of those generation UIs ship with end-to-end evaluation tooling.
+### How is DreamLayer Eval different from Automatic1111, InvokeAI, or Forge?
+Automatic1111, InvokeAI, and Forge are excellent generation UIs. DreamLayer Eval is also a great generation UIs, but it adds benchmarking infrastructure on top: persistent SQLite logging with full prompt, seed, sampler, and config metadata; built-in image and video quality metrics; side-by-side run comparison; batch metric backfills; and CSV or ZIP exports for leaderboard submission. None of those generation UIs ship with end-to-end evaluation tooling.
 
-### How is DreamLayer different from VBench, EvalCrafter, and other diffusion evaluation frameworks?
-VBench, EvalCrafter, HEIM, and similar evaluation frameworks are standardized benchmark suites: they define fixed prompts, tasks, and scoring methods so you can report comparable benchmark results. DreamLayer is benchmarking infrastructure: you bring your own prompts, models, and configs, then run generation, scoring, run logging, and comparison workflows in one place. The two are complementary. DreamLayer’s evaluation stack also draws on HELM-style benchmarking concepts and includes video quality metrics inspired by VBench, such as temporal flickering, subject consistency, background consistency, and motion smoothness.
+### How is DreamLayer Eval different from VBench, EvalCrafter, and other diffusion evaluation frameworks?
+VBench, EvalCrafter, HEIM, and similar evaluation frameworks are standardized benchmark suites: they define fixed prompts, tasks, and scoring methods so you can report comparable benchmark results. DreamLayer Eval is benchmarking infrastructure: you bring your own prompts, models, and configs, then run generation, scoring, run logging, and comparison workflows in one place. The two are complementary. DreamLayer Eval’s evaluation stack also draws on HELM-style benchmarking concepts and includes video quality metrics inspired by VBench, such as temporal flickering, subject consistency, background consistency, and motion smoothness.
 
-### Can I benchmark Stable Diffusion, Flux, DALL·E, Gemini, Runway, Luma, Ideogram, and Stability AI models with DreamLayer?
-Yes. DreamLayer can benchmark both local open-source models and supported API-based models. For local workflows, that includes models like Stable Diffusion 1.5, SDXL, Flux, and custom checkpoints. For API-based workflows, DreamLayer supports models shown in the UI such as Luma Labs Photon, Black Forest Labs Flux Pro, OpenAI DALL·E 3, Google Gemini Nano Banana, Runway Gen 4, Ideogram V3, and Stability AI SD Turbo. Add local model files to the Checkpoints/, Lora/, ControlNet/, and VAE/ folders, or add API keys to .env, and supported models appear in the UI for benchmarking.
+### Can I benchmark Stable Diffusion, Flux, DALL·E, Gemini, Runway, Luma, Ideogram, and Stability AI models with DreamLayer Eval?
+Yes. DreamLayer Eval can benchmark both local open-source models and supported API-based models. For local workflows, that includes models like Stable Diffusion 1.5, SDXL, Flux, and custom checkpoints. For API-based workflows, DreamLayer Eval supports models shown in the UI such as Luma Labs Photon, Black Forest Labs Flux Pro, OpenAI DALL·E 3, Google Gemini Nano Banana, Runway Gen 4, Ideogram V3, and Stability AI SD Turbo. Add local model files to the Checkpoints/, Lora/, ControlNet/, and VAE/ folders, or add API keys to .env, and supported models appear in the UI for benchmarking.
 
-### Can DreamLayer benchmark text-to-video models like Sora, Runway, Luma, or Veo3?
-Yes for Luma AI, Runway ML, and Google's Veo3. DreamLayer integrates with their video APIs out of the box via the `txt2vid_server` — just add the API key to `.env`. Sora support depends on OpenAI exposing a public video generation API. For local open-source video models that run through ComfyUI, drop the checkpoint into the appropriate folder and refresh the model list.
+### Can DreamLayer Eval benchmark text-to-video models like Sora, Runway, Luma, or Veo3?
+Yes for Luma AI, Runway ML, and Google's Veo3. DreamLayer Eval integrates with their video APIs out of the box via the `txt2vid_server` — just add the API key to `.env`. Sora support depends on OpenAI exposing a public video generation API. For local open-source video models that run through ComfyUI, drop the checkpoint into the appropriate folder and refresh the model list.
 
 ### Can I benchmark outputs across prompts, seeds, and configs?
 Yes, this is a core use case. Every run persists to SQLite with the full prompt, negative prompt, seed, sampler, steps, CFG, model hash, LoRA stack, ControlNet config, and all computed metrics. You can replay any run by `run_id`, sweep across multiple seeds or samplers in one batch, and compare any two runs side by side via the comparison API.
 
-### How does DreamLayer calculate CLIPScore?
-DreamLayer computes CLIPScore as the cosine similarity between CLIP text and image embeddings using the `openai/clip-vit-large-patch14` backbone. The score lands in the 0 to 1 range, where higher values indicate stronger prompt-to-image alignment. No reference image is needed. CLIPScore computes live during image generation and writes directly to the `metrics` table, surfaced via the run registry API and included in CSV exports.
+### How does DreamLayer Eval calculate CLIPScore?
+DreamLayer Eval computes CLIPScore as the cosine similarity between CLIP text and image embeddings using the `openai/clip-vit-large-patch14` backbone. The score lands in the 0 to 1 range, where higher values indicate stronger prompt-to-image alignment. No reference image is needed. CLIPScore computes live during image generation and writes directly to the `metrics` table, surfaced via the run registry API and included in CSV exports.
 
-### How does DreamLayer calculate FID, and which reference dataset does it use?
-DreamLayer calculates FID using `torchmetrics.image.fid.FrechetInceptionDistance` with Inception-V3 features at 2048 dimensions. The default reference set is CIFAR-10, which you fetch once with `python scripts/fetch_datasets.py`. Lower FID indicates a closer distributional match to the reference. FID is on-demand: trigger per run via `POST /api/runs/calculate-metrics`, or batch-backfill across historical runs.
+### How does DreamLayer Eval calculate FID, and which reference dataset does it use?
+DreamLayer Eval calculates FID using `torchmetrics.image.fid.FrechetInceptionDistance` with Inception-V3 features at 2048 dimensions. The default reference set is CIFAR-10, which you fetch once with `python scripts/fetch_datasets.py`. Lower FID indicates a closer distributional match to the reference. FID is on-demand: trigger per run via `POST /api/runs/calculate-metrics`, or batch-backfill across historical runs.
 
 ### Can I add my own custom metrics?
 Yes. The metric pipeline is modular. Each metric is implemented as a standalone calculator in `dream_layer_backend_utils/`, registered with the database layer, and surfaced through the existing `metrics`, `composition_metrics`, or `video_metrics` tables. Add your computation in the same pattern as the existing calculators and register it with the database queries module to flow through the registry, comparison API, CSV export, and ZIP report bundle.
 
-### Does DreamLayer support LoRAs, ControlNets, and custom VAEs?
+### Does DreamLayer Eval support LoRAs, ControlNets, and custom VAEs?
 Yes. Drop `.safetensors` files into the auto-created `Lora/`, `ControlNet/`, and `VAE/` folders, then refresh the model list in Settings. The full stack of active LoRAs (with weights), ControlNet config, and VAE choice persists with every run, so you can replay an exact LoRA and ControlNet combination by `run_id` or compare results across LoRA variants in a single batch.
 
 ### Can I sweep across multiple seeds, samplers, and CFG values in one batch?
 Yes. A single benchmark run sweeps N prompts across M seeds across K samplers, and you can vary CFG, steps, and resolution per cell. Every cell becomes a row in the `runs` table with its own `run_id` and metrics. The comparison API lets you slice the resulting matrix any way you need: by sampler, by CFG value, by seed, or any combination.
 
-### Does DreamLayer run on Mac?
-Yes, on both Intel and Apple Silicon Macs. The install script `./install_mac_dependencies.sh` handles PyTorch and dependency setup on either architecture. On Apple Silicon (M1, M2, M3), DreamLayer uses the MPS (Metal Performance Shaders) backend automatically for GPU-accelerated metric computation. On Intel Macs or when MPS is unavailable, DreamLayer falls back to CPU, which works for every metric but runs slower.
+### Does DreamLayer Eval run on Mac?
+Yes, on both Intel and Apple Silicon Macs. The install script `./install_mac_dependencies.sh` handles PyTorch and dependency setup on either architecture. On Apple Silicon (M1, M2, M3), DreamLayer Eval uses the MPS (Metal Performance Shaders) backend automatically for GPU-accelerated metric computation. On Intel Macs or when MPS is unavailable, DreamLayer Eval falls back to CPU, which works for every metric but runs slower.
 
-### What is a "run" in DreamLayer, and what gets logged?
-A run is one image or video generation event tied to a unique `run_id`. DreamLayer logs the prompt, negative prompt, seed, sampler, steps, CFG, model hash, LoRA stack, ControlNet config, VAE, batch size, generation type (txt2img, img2img, txt2vid, img2vid), the workflow JSON, the output filename, and every metric computed for that output. Runs persist to SQLite indefinitely and can be replayed, exported, or compared at any time.
+### What is a "run" in DreamLayer Eval, and what gets logged?
+A run is one image or video generation event tied to a unique `run_id`. DreamLayer Eval logs the prompt, negative prompt, seed, sampler, steps, CFG, model hash, LoRA stack, ControlNet config, VAE, batch size, generation type (txt2img, img2img, txt2vid, img2vid), the workflow JSON, the output filename, and every metric computed for that output. Runs persist to SQLite indefinitely and can be replayed, exported, or compared at any time.
 
 ### How do I reproduce a previous run?
 Every run is assigned a `run_id` that links to its full configuration in SQLite: prompt, negative prompt, seed, sampler, steps, CFG, model hash, LoRA stack, and ControlNet config. Replay by `run_id` from the run registry to regenerate the exact image with the exact metrics, or fork a run by changing one parameter (such as the sampler or seed) for a controlled comparison.
 
-### Does DreamLayer send my prompts or images to any server?
-No. DreamLayer runs locally on your machine, and prompts, generated images, configs, and metrics stay in your local filesystem and SQLite database by default. The only exception is when you choose to use an API-based model such as DALL·E, Flux, Ideogram, Stability AI, Runway, Luma, or Gemini, in which case the relevant request data is sent to that provider for generation. DreamLayer does not perform telemetry, analytics, or background uploads on its own.
+### Does DreamLayer Eval send my prompts or images to any server?
+No. DreamLayer Eval runs locally on your machine, and prompts, generated images, configs, and metrics stay in your local filesystem and SQLite database by default. The only exception is when you choose to use an API-based model such as DALL·E, Flux, Ideogram, Stability AI, Runway, Luma, or Gemini, in which case the relevant request data is sent to that provider for generation. DreamLayer Eval does not perform telemetry, analytics, or background uploads on its own.
 
-### Can I integrate DreamLayer into a CI/CD pipeline for regression testing?
+### Can I integrate DreamLayer Eval into a CI/CD pipeline for regression testing?
 Yes. Every Flask service exposes HTTP endpoints (txt2img, img2img, video metrics, run registry, report bundle) that you can call from a CI job. A typical pattern: trigger a fixed prompt set against a candidate model, fetch CLIPScore and aesthetic metrics from the run registry, compare against a baseline `run_id` from the previous release, and fail the build if any metric regresses beyond a defined threshold.
 
 ### How long does a benchmark run take?
-Benchmark runtime depends on the model, hardware, batch size, and selected metrics. In one representative image benchmark, DreamLayer processed 200 prompts in 45 minutes per model on an Intel MacBook Pro across API-based models including Photon, Flux Pro, DALL·E 3, Nano Banana, Runway Gen 4, Ideogram V3, and Stability SD Turbo. Using the same prompts, seeds, and configs across runs, DreamLayer handled generation, scoring, and output aggregation automatically. Larger batches and heavier metrics increase total runtime, but DreamLayer still makes reproducible benchmarking much faster than running the workflow manually.
+Benchmark runtime depends on the model, hardware, batch size, and selected metrics. In one representative image benchmark, DreamLayer Eval processed 200 prompts in 45 minutes per model on an Intel MacBook Pro across API-based models including Photon, Flux Pro, DALL·E 3, Nano Banana, Runway Gen 4, Ideogram V3, and Stability SD Turbo. Using the same prompts, seeds, and configs across runs, DreamLayer Eval handled generation, scoring, and output aggregation automatically. Larger batches and heavier metrics increase total runtime, but DreamLayer Eval still makes reproducible benchmarking much faster than running the workflow manually.
 
 -----
 
