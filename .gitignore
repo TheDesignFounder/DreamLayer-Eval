@@ -194,7 +194,7 @@ cython_debug/
 .cursorindexingignore
 
 # DreamLayer Resources
-Dream_Layer_Resources/
+#Dream_Layer_Resources/
 
 # DreamLayer Backend Generated Files
 dream_layer_backend/served_images/
