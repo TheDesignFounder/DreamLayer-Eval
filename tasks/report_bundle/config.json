@@ -1,0 +1,6 @@
+{
+  "model": "stable-diffusion",
+  "seed": 42,
+  "steps": 30,
+  "sampler": "Euler"
+}
