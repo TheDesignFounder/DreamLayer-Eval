@@ -1,0 +1,14 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 1️⃣ copy only package manifests first
+COPY dream_layer_frontend/package*.json ./
+
+RUN npm install
+
+# 2️⃣ copy the rest of the frontend source (node_modules is excluded by root .dockerignore)
+COPY dream_layer_frontend ./
+
+EXPOSE 3000
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]

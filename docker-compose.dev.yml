@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend.dev
+    command: python dream_layer_backend/dream_layer.py
+    volumes:
+      - .:/app                         # live-reload on edits
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=true
+    ports:
+      - "5002:5002"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend.dev
+    command: npm run dev -- --host 0.0.0.0 --port 3000
+    volumes:
+      - ./dream_layer_frontend:/app    # live-reload on edits
+      - /app/node_modules              # keep host node_modules out
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend

@@ -1,0 +1,8 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY dream_layer_backend/requirements.txt ./dream_layer_backend/requirements.txt
+RUN pip install --no-cache-dir -r dream_layer_backend/requirements.txt
+COPY . .
+EXPOSE 5002
+CMD ["python", "dream_layer_backend/dream_layer.py"]

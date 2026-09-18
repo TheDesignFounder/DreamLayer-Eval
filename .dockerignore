@@ -1,0 +1,10 @@
+# general
+.git
+.env
+logs/
+__pycache__/
+*.pyc
+venv/
+node_modules/
+.idea/
+.vscode/
