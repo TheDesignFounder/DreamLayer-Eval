@@ -1,0 +1,6 @@
+numpy
+pillow
+pytest
+requests
+pytest-mock
+faker
