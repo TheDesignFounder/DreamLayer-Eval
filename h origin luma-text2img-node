@@ -1,0 +1,5 @@
+[33m8b289e2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mluma-text2img-node[m[33m)[m Add Luma Text2Img node implementation with tests and documentation
+[33mbd20eaa[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m Update README.md
+[33m84673cb[m Merge pull request #57 from reharik/enable_build_for_linux_distros
+[33mb307420[m fixing venv consistency
+[33mcfa5741[m making suggested updates
