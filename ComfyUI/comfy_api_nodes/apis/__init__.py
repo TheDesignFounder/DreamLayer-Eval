@@ -903,6 +903,17 @@ class KlingImageGenerationsRequest(BaseModel):
     prompt: str = Field(..., description='Positive text prompt', max_length=500)
 
 
+class Kling2ImageGenerationsRequest(KlingImageGenerationsRequest):
+    width: Optional[int] = Field(
+        512,
+        description='The width of the generated image in pixels.'
+    )
+    height: Optional[int] = Field(
+        512,
+        description='The height of the generated image in pixels.'
+    )
+
+
 class KlingImageResult(BaseModel):
     index: Optional[int] = Field(None, description='Image Number (0-9)')
     url: Optional[AnyUrl] = Field(None, description='URL for generated image')

@@ -37,6 +37,7 @@ from comfy_api_nodes.apis import (
     KlingVideoResult,
     KlingImageResult,
     KlingImageGenerationsRequest,
+    Kling2ImageGenerationsRequest,
     KlingImageGenerationsResponse,
     KlingImageGenImageReferenceType,
     KlingImageGenModelName,
@@ -108,6 +109,10 @@ class KlingApiError(Exception):
 
     pass
 
+
+class ComfyUIWarning(Warning):
+    """Custom warning for ComfyUI-specific issues, such as resolution fallbacks or API usage warnings."""
+    pass
 
 def poll_until_finished(
     auth_kwargs: dict[str, str],
@@ -960,7 +965,7 @@ class KlingVideoExtendNode(KlingNodeBase):
 
     RETURN_TYPES = ("VIDEO", "STRING", "STRING")
     RETURN_NAMES = ("VIDEO", "video_id", "duration")
-    DESCRIPTION = "Kling Video Extend Node. Extend videos made by other Kling nodes. The video_id is created by using other Kling Nodes."
+    DESCRIPTION = "Kling Video Extend Node. Extend videos made by other Kling Nodes. The video_id is created by using other Kling Nodes."
 
     def get_response(
         self, task_id: str, auth_kwargs: dict[str, str], node_id: Optional[str] = None
@@ -1725,6 +1730,229 @@ class KlingImageGenerationNode(KlingImageGenerationBase):
         return (image_result_to_node_output(images),)
 
 
+class KlingGenerate(KlingNodeBase):
+    """
+    Kling 2.0 Text-to-Image Generation Node. Generates images from text prompts with automatic fallback to 512x512 for non-square sizes.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "prompt": (
+                    IO.STRING,
+                    {
+                        "multiline": True,
+                        "default": "",
+                        "tooltip": "Text prompt for image generation",
+                        "max_length": MAX_PROMPT_LENGTH_IMAGE_GEN,
+                    },
+                ),
+                "width": (
+                    IO.INT,
+                    {
+                        "default": 512,
+                        "min": 256,
+                        "max": 2048,
+                        "step": 64,
+                        "tooltip": "Image width (will fallback to 512 if not square)",
+                    },
+                ),
+                "height": (
+                    IO.INT,
+                    {
+                        "default": 512,
+                        "min": 256,
+                        "max": 2048,
+                        "step": 64,
+                        "tooltip": "Image height (will fallback to 512 if not square)",
+                    },
+                ),
+                "negative_prompt": (
+                    IO.STRING,
+                    {
+                        "multiline": True,
+                        "default": "",
+                        "tooltip": "Negative text prompt (optional)",
+                        "max_length": MAX_NEGATIVE_PROMPT_LENGTH_IMAGE_GEN,
+                    },
+                ),
+                "n": (
+                    IO.INT,
+                    {
+                        "default": 1,
+                        "min": 1,
+                        "max": 4,
+                        "tooltip": "Number of images to generate",
+                    },
+                ),
+                "seed": (
+                    IO.INT,
+                    {
+                        "default": 0,
+                        "min": 0,
+                        "max": 0xFFFFFFFFFFFFFFFF,
+                        "control_after_generate": True,
+                        "tooltip": "Random seed for generation",
+                    },
+                ),
+            },
+            "hidden": {
+                "auth_token": "AUTH_TOKEN_COMFY_ORG",
+                "comfy_api_key": "API_KEY_COMFY_ORG",
+                "unique_id": "UNIQUE_ID",
+            },
+        }
+
+    RETURN_TYPES = (IO.IMAGE,)
+    FUNCTION = "api_call"
+    CATEGORY = "api node/image/Kling"
+    DESCRIPTION = "Kling 2.0 Text-to-Image generation with automatic fallback to 512x512 for non-square sizes."
+    API_NODE = True
+
+    def validate_prompt(self, prompt: str, negative_prompt: str):
+        """Validates prompt inputs."""
+        return validate_prompts(prompt, negative_prompt, MAX_PROMPT_LENGTH_IMAGE_GEN)
+
+    def _handle_resolution_fallback(self, width: int, height: int, unique_id: Optional[str] = None) -> tuple[int, int]:
+        """
+        Handle resolution fallback to 512x512 for non-square sizes.
+        Raises ComfyUIWarning and reports progress for non-square resolutions.
+        """
+        import logging
+        from server import PromptServer
+        
+        if width != height:
+            # Log warning and send progress update
+            warning_msg = f"Non-square resolution {width}x{height} requested. Falling back to 512x512 as Kling 2.0 only supports square images."
+            logging.warning(warning_msg)
+            
+            if unique_id:
+                PromptServer.instance.send_progress_text(
+                    f"⚠️ Resolution Fallback: {warning_msg}", unique_id
+                )
+            
+            # Raise a warning exception that can be caught by ComfyUI
+            raise ComfyUIWarning(f"ComfyUIWarning: {warning_msg}")
+        
+        return width, height
+
+    def get_response(
+        self,
+        task_id: str,
+        auth_kwargs: Optional[dict[str, str]],
+        node_id: Optional[str] = None,
+    ) -> KlingImageGenerationsResponse:
+        """Poll for image generation completion."""
+        return poll_until_finished(
+            auth_kwargs,
+            ApiEndpoint(
+                path=f"{PATH_IMAGE_GENERATIONS}/{task_id}",
+                method=HttpMethod.GET,
+                request_model=EmptyRequest,
+                response_model=KlingImageGenerationsResponse,
+            ),
+            result_url_extractor=get_images_urls_from_response,
+            estimated_duration=AVERAGE_DURATION_IMAGE_GEN,
+            node_id=node_id,
+        )
+
+    def api_call(
+        self,
+        prompt: str,
+        width: int,
+        height: int,
+        negative_prompt: str = "",
+        n: int = 1,
+        seed: int = 0,
+        unique_id: Optional[str] = None,
+        **kwargs,
+    ):
+        """Main API call function for Kling 2.0 image generation."""
+        from server import PromptServer
+        
+        # Validate prompts
+        self.validate_prompt(prompt, negative_prompt)
+        
+        # Send initial progress update
+        if unique_id:
+            PromptServer.instance.send_progress_text(
+                f"Starting Kling 2.0 image generation: {prompt[:50]}...", unique_id
+            )
+        
+        # Handle resolution fallback - this will raise ComfyUIWarning for non-square
+        try:
+            final_width, final_height = self._handle_resolution_fallback(width, height, unique_id)
+        except Exception as e:
+            if "ComfyUIWarning" in str(e):
+                # For non-square resolutions, fallback to 512x512 and continue
+                final_width, final_height = 512, 512
+                if unique_id:
+                    PromptServer.instance.send_progress_text(
+                        f"Continuing with 512x512 resolution...", unique_id
+                    )
+            else:
+                raise e
+
+        # Use square aspect ratio (1:1) since we're forcing square resolution
+        aspect_ratio = KlingImageGenAspectRatio.field_1_1
+
+        # Create initial request
+        initial_operation = SynchronousOperation(
+            endpoint=ApiEndpoint(
+                path=PATH_IMAGE_GENERATIONS,
+                method=HttpMethod.POST,
+                request_model=Kling2ImageGenerationsRequest,
+                response_model=KlingImageGenerationsResponse,
+            ),
+            request=Kling2ImageGenerationsRequest(
+                model_name=KlingImageGenModelName.kling_v2,  # Use Kling 2.0
+                prompt=prompt,
+                negative_prompt=negative_prompt if negative_prompt else None,
+                aspect_ratio=aspect_ratio,
+                n=n,
+                image_fidelity=0.5,
+                human_fidelity=0.45,
+                height=final_height,
+                width=final_width,
+            ),
+            auth_kwargs=kwargs,
+        )
+
+        # Send progress update for task creation
+        if unique_id:
+            PromptServer.instance.send_progress_text(
+                "Creating Kling 2.0 generation task...", unique_id
+            )
+
+        # Execute initial request
+        task_creation_response = initial_operation.execute()
+        validate_task_creation_response(task_creation_response)
+        task_id = task_creation_response.data.task_id
+
+        # Send progress update with task ID
+        if unique_id:
+            PromptServer.instance.send_progress_text(
+                f"Task created (ID: {task_id}). Waiting for completion...", unique_id
+            )
+
+        # Poll for completion
+        final_response = self.get_response(
+            task_id, auth_kwargs=kwargs, node_id=unique_id
+        )
+        validate_image_result_response(final_response)
+
+        # Send final progress update
+        if unique_id:
+            PromptServer.instance.send_progress_text(
+                "Image generation completed!", unique_id
+            )
+
+        # Extract and return images
+        images = get_images_from_response(final_response)
+        return (image_result_to_node_output(images),)
+
+
 NODE_CLASS_MAPPINGS = {
     "KlingCameraControls": KlingCameraControls,
     "KlingTextToVideoNode": KlingTextToVideoNode,
@@ -1739,6 +1967,7 @@ NODE_CLASS_MAPPINGS = {
     "KlingImageGenerationNode": KlingImageGenerationNode,
     "KlingSingleImageVideoEffectNode": KlingSingleImageVideoEffectNode,
     "KlingDualCharacterVideoEffectNode": KlingDualCharacterVideoEffectNode,
+    "KlingGenerate": KlingGenerate,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -1755,4 +1984,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "KlingImageGenerationNode": "Kling Image Generation",
     "KlingSingleImageVideoEffectNode": "Kling Video Effects",
     "KlingDualCharacterVideoEffectNode": "Kling Dual Character Video Effects",
+    "KlingGenerate": "Kling 2.0 Text-to-Image",
 }
