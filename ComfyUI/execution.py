@@ -485,6 +485,27 @@ class PromptExecutor:
             self.add_message("execution_error", mes, broadcast=False)
 
     def execute(self, prompt, prompt_id, extra_data={}, execute_outputs=[]):
+        # Import necessary modules for disk space checking
+        import shutil
+        import folder_paths
+        from comfy.cli_args import args
+
+        # Get the output directory path
+        output_path = folder_paths.get_output_directory()
+        # Get the number of free bytes on the disk where the output directory is located
+        free_bytes = shutil.disk_usage(output_path).free
+        # Convert free bytes to gigabytes
+        free_gb = free_bytes / (1024 ** 3)
+
+        # Check if the available disk space is less than the maximum allowed (quota)
+        if free_gb < args.max_disk_gb:
+            # Mark execution as unsuccessful due to disk quota exceeded
+            self.success = False
+            # Set a status message indicating the disk quota has been exceeded
+            self.status_messages = [f"Disk quota exceeded: only {free_gb:.2f} GB left."]
+            # Raise an exception to halt execution
+            raise RuntimeError("DISK_QUOTA_EXCEEDED")
+
         nodes.interrupt_processing(False)
 
         if "client_id" in extra_data:
