@@ -1,0 +1,14 @@
+{
+  "nodes": {
+    "1": {
+      "class_type": "TextPrompt",
+      "inputs": {}
+    },
+    "2": {
+      "class_type": "ImageGen",
+      "inputs": {
+        "prompt": [["1", 0]]
+      }
+    }
+  }
+}
