@@ -56,20 +56,22 @@ echo %GREEN%[SUCCESS]%NC% PowerShell is available.
 echo %CYAN%[STEP]%NC% Starting PowerShell installation script...
 echo.
 
-
 :: Run PowerShell script with bypass execution policy
 powershell -ExecutionPolicy Bypass -NoProfile -Command "& '%~dp0install_windows_dependencies.ps1'"
 set PS_EXIT_CODE=%errorlevel%
 
-if %PS_EXIT_CODE% equ 0 (
+if %PS_EXIT_CODE% EQU 0 goto:success 
+if %PS_EXIT_CODE% NEQ 0 goto:failed
+
+:success
     echo.
     echo %GREEN%================================================%NC%
-    echo %GREEN%    INSTALLATION COMPLETE!%NC%
+    echo %GREEN%    INSTALLATION COMPLETE %NC%
     echo %GREEN%================================================%NC%
     echo.
     echo %CYAN%Next steps:%NC%
     echo   1. %YELLOW%Configure your environment:%NC%
-    echo      • Create %BLUE%.env%NC% with your API keys (optional)
+    echo      • Create %BLUE%.env with your API keys (optional)%NC%
     echo.
     echo   2. %YELLOW%Start the application:%NC%
     echo      • Run: %BLUE%start_dream_layer.bat%NC%
@@ -79,18 +81,21 @@ if %PS_EXIT_CODE% equ 0 (
     echo      • Main API: %BLUE%http://localhost:5002%NC%
     echo      • ComfyUI: %BLUE%http://localhost:8188%NC%
     echo.
-    echo %GREEN%Happy creating with Dream Layer! 🎨✨%NC%
-    echo.
-) else (
+    echo %GREEN%Happy creating with Dream Layer!🎨✨ %NC%
+	echo.
+	goto:end
+
+:failed
     echo.
     echo %RED%================================================%NC%
-    echo %RED%    INSTALLATION FAILED!%NC%
+    echo %RED%    INSTALLATION FAILED %NC%
     echo %RED%================================================%NC%
     echo.
-    echo %YELLOW%The PowerShell script failed with exit code: %PS_EXIT_CODE%%NC%
+    echo %YELLOW%The PowerShell script failed with exit code: %PS_EXIT_CODE%
     echo %YELLOW%Please check the errors above and try again.%NC%
     echo.
-)
-
+	goto:end 
+	
+:end
 pause
-exit /b %PS_EXIT_CODE%
+exit /b %PS_EXIT_CODE% 
