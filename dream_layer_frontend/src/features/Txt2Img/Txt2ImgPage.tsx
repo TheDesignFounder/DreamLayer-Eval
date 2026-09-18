@@ -81,6 +81,21 @@ const Txt2ImgPage: React.FC<Txt2ImgPageProps> = ({ selectedModel, onTabChange })
   const handleBatchSettingsChange = (batchSize: number, batchCount: number) => {
     updateCoreSettings({ batch_size: batchSize, batch_count: batchCount });
   };
+  const handleGenerateReport = async () => {
+  try {
+    const response = await fetch("/api/generate-report", { method: "POST" });
+    if (!response.ok) throw new Error("Failed to generate report");
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "report.zip"; 
+    link.click();
+  } catch (error) {
+    console.error("Error generating report:", error);
+  }
+};
+
 
   const handleSamplingSettingsChange = (sampler: string, scheduler: string, steps: number, cfg: number) => {
     updateCoreSettings({
@@ -593,6 +608,7 @@ const Txt2ImgPage: React.FC<Txt2ImgPageProps> = ({ selectedModel, onTabChange })
   };
 
   return (
+    
     <div className={`mb-4 ${isMobile ? 'grid grid-cols-1' : 'grid gap-6 md:grid-cols-[1.8fr_1fr]'}`}>
       {/* Left Column - Controls */}
       <div className="space-y-4">
@@ -600,6 +616,13 @@ const Txt2ImgPage: React.FC<Txt2ImgPageProps> = ({ selectedModel, onTabChange })
           <div className="mb-[18px] flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
             <h3 className="text-base font-medium">Generation Settings</h3>
             <ActionButtons />
+             <Button
+      onClick={handleGenerateReport}
+      variant="secondary"
+      disabled={isGenerating}
+    >
+      Generate Report
+    </Button>
           </div>
           
           {isMobile && <MobileImagePreview />}

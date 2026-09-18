@@ -1,0 +1,8 @@
+{
+    "task_id": "123",
+    "report_type": "Csv",
+    "data": {
+        "title": "My Report",
+        "content": "This is the content of the report."
+    }
+}

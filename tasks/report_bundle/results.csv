@@ -1,0 +1,3 @@
+id,image_path,score,clip_score,lpips_score,run_id
+1,grids/grid1.png,0.95,0.214652,0.0,run_1
+2,grids/grid2.png,0.88,0.237358,0.0,run_2
