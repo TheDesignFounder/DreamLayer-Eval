@@ -89,7 +89,7 @@ if args.deterministic:
 
 directml_enabled = False
 if args.directml is not None:
-    import torch_directml
+    import torch_directml # type: ignore
     directml_enabled = True
     device_index = args.directml
     if device_index < 0:
@@ -101,7 +101,7 @@ if args.directml is not None:
     lowvram_available = False #TODO: need to find a way to get free memory in directml before this can be enabled by default.
 
 try:
-    import intel_extension_for_pytorch as ipex
+    import intel_extension_for_pytorch as ipex # type: ignore
     _ = torch.xpu.device_count()
     xpu_available = xpu_available or torch.xpu.is_available()
 except:
@@ -115,14 +115,14 @@ except:
     pass
 
 try:
-    import torch_npu  # noqa: F401
+    import torch_npu  # type: ignore # noqa: F401
     _ = torch.npu.device_count()
     npu_available = torch.npu.is_available()
 except:
     npu_available = False
 
 try:
-    import torch_mlu  # noqa: F401
+    import torch_mlu  # type: ignore # noqa: F401
     _ = torch.mlu.device_count()
     mlu_available = torch.mlu.is_available()
 except:
@@ -241,8 +241,8 @@ if args.disable_xformers:
     XFORMERS_IS_AVAILABLE = False
 else:
     try:
-        import xformers
-        import xformers.ops
+        import xformers # type: ignore
+        import xformers.ops # type: ignore
         XFORMERS_IS_AVAILABLE = True
         try:
             XFORMERS_IS_AVAILABLE = xformers._has_cpp_library
