@@ -1,0 +1,120 @@
+{
+  "nodes": [
+    {
+      "id": 4,
+      "type": "CheckpointLoaderSimple",
+      "pos": [50, 200],
+      "size": [315, 98],
+      "inputs": [],
+      "outputs": [
+        {"name": "MODEL", "type": "MODEL", "links": [1]},
+        {"name": "CLIP", "type": "CLIP", "links": [3, 5]},
+        {"name": "VAE", "type": "VAE", "links": [8]}
+      ],
+      "properties": {},
+      "widgets_values": ["sd_xl_base_1.0.safetensors"],
+      "title": "Load Checkpoint"
+    },
+    {
+      "id": 5,
+      "type": "CLIPTextEncode",
+      "pos": [450, 100],
+      "size": [422.84503173828125, 164.31304931640625],
+      "inputs": [
+        {"name": "clip", "type": "CLIP", "link": 3}
+      ],
+      "outputs": [
+        {"name": "CONDITIONING", "type": "CONDITIONING", "links": [2]}
+      ],
+      "properties": {},
+      "widgets_values": ["a beautiful landscape with mountains and a lake, highly detailed, 8k resolution"],
+      "title": "CLIP Text Encode (Prompt)"
+    },
+    {
+      "id": 6,
+      "type": "CLIPTextEncode", 
+      "pos": [450, 300],
+      "size": [422.84503173828125, 164.31304931640625],
+      "inputs": [
+        {"name": "clip", "type": "CLIP", "link": 5}
+      ],
+      "outputs": [
+        {"name": "CONDITIONING", "type": "CONDITIONING", "links": [4]}
+      ],
+      "properties": {},
+      "widgets_values": ["blurry, low quality, distorted"],
+      "title": "CLIP Text Encode (Negative)"
+    },
+    {
+      "id": 9,
+      "type": "EmptyLatentImage",
+      "pos": [450, 500],
+      "size": [315, 106],
+      "inputs": [],
+      "outputs": [
+        {"name": "LATENT", "type": "LATENT", "links": [7]}
+      ],
+      "properties": {},
+      "widgets_values": [512, 512, 1],
+      "title": "Empty Latent Image"
+    },
+    {
+      "id": 3,
+      "type": "KSampler",
+      "pos": [950, 200],
+      "size": [315, 262],
+      "inputs": [
+        {"name": "model", "type": "MODEL", "link": 1},
+        {"name": "positive", "type": "CONDITIONING", "link": 2},
+        {"name": "negative", "type": "CONDITIONING", "link": 4},
+        {"name": "latent_image", "type": "LATENT", "link": 7}
+      ],
+      "outputs": [
+        {"name": "LATENT", "type": "LATENT", "links": [6]}
+      ],
+      "properties": {},
+      "widgets_values": [156680208700286, "randomize", 20, 8, "euler", "normal", 1],
+      "title": "KSampler"
+    },
+    {
+      "id": 7,
+      "type": "VAEDecode",
+      "pos": [1350, 200],
+      "size": [210, 46],
+      "inputs": [
+        {"name": "samples", "type": "LATENT", "link": 6},
+        {"name": "vae", "type": "VAE", "link": 8}
+      ],
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [9]}
+      ],
+      "properties": {},
+      "widgets_values": [],
+      "title": "VAE Decode"
+    },
+    {
+      "id": 8,
+      "type": "SaveImage",
+      "pos": [1700, 200],
+      "size": [210, 58],
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 9}
+      ],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": ["ComfyUI"],
+      "title": "Save Image"
+    }
+  ],
+  "links": [
+    [1, 4, 0, 3, 0, "MODEL"],
+    [2, 5, 0, 3, 1, "CONDITIONING"],
+    [3, 4, 1, 5, 0, "CLIP"],
+    [4, 6, 0, 3, 2, "CONDITIONING"],
+    [5, 4, 1, 6, 0, "CLIP"],
+    [6, 3, 0, 7, 0, "LATENT"],
+    [7, 9, 0, 3, 3, "LATENT"],
+    [8, 4, 2, 7, 1, "VAE"],
+    [9, 7, 0, 8, 0, "IMAGE"]
+  ]
+}

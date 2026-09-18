@@ -1,0 +1,39 @@
+/* React Flow Controls and MiniMap styling using CSS variables */
+.react-flow__controls {
+  --xy-controls-button-background-color: hsl(var(--background));
+  --xy-controls-button-background-color-hover: hsl(var(--accent));
+  --xy-controls-button-border-color: hsl(var(--border));
+  --xy-controls-button-color: hsl(var(--foreground));
+  --xy-controls-button-color-hover: hsl(var(--accent-foreground));
+  
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px hsl(var(--shadow) / 0.1);
+}
+
+.react-flow__controls-button {
+  border-radius: 4px;
+  margin: 2px;
+  transition: all 0.2s ease;
+}
+
+.react-flow__controls-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.react-flow__minimap {
+  --xy-minimap-mask-background-color: hsla(var(--background) / 0.3);
+  --xy-minimap-mask-stroke-color: hsl(var(--border));
+  --xy-minimap-mask-stroke-width: 1;
+  
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px hsl(var(--shadow) / 0.1);
+}
+
+.react-flow__attribution {
+  --xy-attribution-background-color: hsl(var(--background));
+}
