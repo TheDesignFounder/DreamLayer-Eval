@@ -1,0 +1,14 @@
+{
+  "model": "SDXL",
+  "vae": "AutoencoderKL",
+  "loras": ["AnimeStyleV2"],
+  "controlnets": ["CannyEdgeDetector"],
+  "prompt": "a serene futuristic cityscape at sunset, ultra realistic, 8k",
+  "negative_prompt": "blurry, low quality, distorted",
+  "seed": 123456,
+  "sampler": "Euler",
+  "steps": 25,
+  "cfg": 7.5,
+  "workflow": "txt2img",
+  "version": "1.0.0"
+}

@@ -1,0 +1,3 @@
+image_path,sampler,steps,cfg,preset,seed,width,height,grid_label,notes
+grids/image1.png,Euler,30,8.5,cyber-neural,108234,1024,1024,digital-consciousness,"Futuristic brain core visualization in a neon tech chamber"
+grids/image2.png,DPM++ 2M Karras,28,7.8,ui-dreamscape,786512,1024,768,holographic-devices,"Concept art of interconnected digital devices in a glowy metaverse style"
