@@ -1,0 +1,5 @@
+# Contributor checks; install alongside the core/legacy lock used by CI.
+ruff==0.14.2
+scikit-learn==1.5.2
+jsonschema==4.25.1
+build==1.3.0

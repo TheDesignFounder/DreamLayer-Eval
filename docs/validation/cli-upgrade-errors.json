@@ -1,0 +1,94 @@
+{
+  "recorded_at": "2026-10-30T09:23:31.633760+00:00",
+  "status": "passed",
+  "scope": "CLI presentation of refused evaluator upgrades only",
+  "package_version": "1.1.0",
+  "runtime_files_changed": [
+    "research/__main__.py",
+    "research/upgrades.py"
+  ],
+  "behavior": {
+    "exception_type": "UpgradeRefused, a ValueError subtype",
+    "cli_error_lines": 1,
+    "traceback": false,
+    "exit_status": 1,
+    "existing_version_warnings_retained": true,
+    "job_error_and_successful_results_preserved": true,
+    "unrelated_exceptions_not_caught_by_formatter": true
+  },
+  "offline_suites": [
+    {
+      "environment": "clean",
+      "python": "3.11.13",
+      "passed": 183,
+      "elapsed_seconds": 39.82,
+      "runtime_artifacts_changed": 0
+    },
+    {
+      "environment": "ml",
+      "python": "3.11.13",
+      "passed": 183,
+      "elapsed_seconds": 50.43,
+      "runtime_artifacts_changed": 0
+    },
+    {
+      "environment": "python312",
+      "python": "3.12.10",
+      "passed": 183,
+      "elapsed_seconds": 45.8,
+      "runtime_artifacts_changed": 0
+    }
+  ],
+  "style": {
+    "ruff": "passed",
+    "format": "passed",
+    "files": 52,
+    "public_signatures_and_docstrings": 115
+  },
+  "installed_wheel_refusal_and_recovery": {
+    "installed_wheel": true,
+    "exit_code": 1,
+    "error_lines": 1,
+    "traceback": false,
+    "stdout_empty": true,
+    "job_state_after_refusal": "failed",
+    "job_error_preserved": true,
+    "records_added": 0,
+    "current_successes": 2,
+    "plain_resume_exit_code": 0,
+    "plain_resume_state": "complete",
+    "source_fixture_read_only": true
+  },
+  "distribution": {
+    "wheel_build": "passed",
+    "sdist_build": "passed",
+    "installed_package_bytes_match_source": true,
+    "wheel_sha256": "b2f7059e03d46b2bd5c19eb91a558cef492e681cba3b25fbdf989459d2c47b75",
+    "sdist_sha256": "8766f8fce77aaafca7f7da8b97c0597d6204c8a1f17434da2407cd21d18ad6ea",
+    "isolated_cli_replay": {
+      "status": "passed",
+      "package_version": "1.1.0",
+      "python": "3.11.13",
+      "installed_package_outside_source": true,
+      "schemas_present": true,
+      "cli_demo_export_import_run_analyze": "passed",
+      "fresh_resume_added_records": 0,
+      "fresh_replay_exact": true,
+      "bundle_sha256": "6e048e1de3809c4425af4e66be2243ff606ec4af5229fbc74a806ef727d1fd02"
+    },
+    "previous_distribution_archived_with_matching_hashes": true
+  },
+  "integrity": {
+    "protected_files_unchanged": 11,
+    "earlier_archived_files_unchanged": 202,
+    "scratch_record_count": 496,
+    "additional_paid_calls": 0
+  },
+  "frontend_and_browser": "Source unchanged; not rerun in this CLI-only follow-up. Prior results are retained in upgrade-safety.json.",
+  "research_source_hash": "0334ec1ce04838fd166d8ff8072de528b121358405e46034d4afca97c6a48e44",
+  "hosted_ci": {
+    "status": "not_run",
+    "reason": "No repository remote has been supplied"
+  },
+  "additional_paid_provider_calls": 0
+}

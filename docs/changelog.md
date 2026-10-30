@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Research workbench 1.1.0
+
+- Show refused evaluator upgrades as a single CLI error line with exit status 1,
+  retaining the job error and successful results. Unexpected errors still surface
+  normally for debugging.
+- Refuse evaluator upgrades that would replace a successful result with an
+  unavailable or failed evaluation; keep its cache and surface the job error in
+  CLI/API/UI. Add coverage for dataset/asset scopes, replay and later recovery.
+- Add offline generators that reproduce the live-smoke and I3D preprocessing
+  summaries, plus an extended five-shape preprocessing check. Remove a key-shaped
+  literal from the contributor example.
+- Added the `/research` workbench and CLI for frozen image/video experiments,
+  imported media, scoped metrics, synthetic or provider judges, blinded review,
+  paired comparisons, and verified portable bundle replay.
+- Preserved immutable results, explicit evaluator versions, superseding retries,
+  counterbalanced pairwise presentation, and audited delivery reconciliation.
+- Added indexed protocol/unit lookups, a 2,000-trial scale check, statistical
+  reference checks, frozen schema-1 specifications and an installable core package.
+- Added Linux/macOS Python 3.11/3.12 CI, frontend/browser checks, an explicit
+  unsupported-Windows check, Ruff formatting/linting and public API documentation checks.
+- Consolidated validation into portable summaries; raw local runs stay outside
+  published documentation. Added real CLIP/YOLO CPU smoke evidence with pinned provenance.
+- Exercised a real local ComfyUI procedural image graph through submission,
+  polling, media retrieval and exact replay; this does not verify diffusion inference.
+- Added a separately authorized live-smoke runner with cost reservations, fixed
+  request/output limits and offline tests for both adapters and cached replay.
+- Validated 12 real OpenAI/Anthropic image judgments across pinned snapshots,
+  with pointwise/pairwise results, usage and estimated cost, no added calls on
+  resume, and exact fresh-database replay under a US$5 total cap.
+- Live video/failure/retry judging, model-based ComfyUI generation, several optional neural paths and migration of
+  an original historical runtime database remain unverified; see the README table.
+
 ### Added
 - Comprehensive documentation system
 - MkDocs integration for GitHub Pages

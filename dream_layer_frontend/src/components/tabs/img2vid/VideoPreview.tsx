@@ -21,7 +21,7 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ onTabChange }) => {
   const { videos, isLoading, currentVideoIndex, setCurrentVideoIndex, removeVideo } = useImg2VidGalleryStore();
   const [outputSettingsExpanded, setOutputSettingsExpanded] = useState(true);
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
-  const [videoMetrics, setVideoMetrics] = useState<Record<string, any>>({});
+  const [videoMetrics, setVideoMetrics] = useState<Record<string, unknown>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
 
   const currentVideo = videos[currentVideoIndex] || videos[0];

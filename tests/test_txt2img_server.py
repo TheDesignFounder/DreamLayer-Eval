@@ -21,36 +21,22 @@ class TestTxt2ImgServer:
             response = client.options('/api/txt2img')
             assert response.status_code == 200
     
-    @patch('txt2img_server.requests.post')
-    @patch('dream_layer_backend_utils.direct_database_integration.save_generation_run')
-    def test_txt2img_generation_success(self, mock_db_save, mock_comfy_post, test_generation_data):
-        """Test successful txt2img generation with database integration"""
-        from txt2img_server import app
-        
-        # Mock ComfyUI response
-        mock_response = Mock()
-        mock_response.json.return_value = {
-            'status': 'success',
-            'all_images': [{'filename': 'test_output.png'}]
-        }
-        mock_response.status_code = 200
-        mock_comfy_post.return_value = mock_response
-        
-        # Mock database save
-        mock_db_save.return_value = True
-        
-        with app.test_client() as client:
-            response = client.post('/api/txt2img', 
-                                 json=test_generation_data,
-                                 content_type='application/json')
-            
-            # Should handle request (may return 200 or 500 depending on mocking)
-            assert response.status_code in [200, 500]
-            
-            # If successful, verify database integration was called
-            if response.status_code == 200:
-                mock_db_save.assert_called()
-    
+    def test_txt2img_generation_success(self, monkeypatch, test_generation_data):
+        """Real route/workflow/registry construction with a synthetic transport boundary."""
+        import txt2img_server as service
+        saved = []
+        histories = []
+        monkeypatch.setattr(service, 'send_to_comfyui', lambda workflow: {'all_images': [{'filename':'fixture.png'}]})
+        monkeypatch.setattr(service.registry, 'add_run', saved.append)
+        monkeypatch.setattr(service.gh, 'save_generation', histories.append)
+        with service.app.test_client() as client:
+            response = client.post('/api/txt2img', json={**test_generation_data, 'random_seed':False})
+        assert response.status_code == 200
+        assert response.json['generated_images'] == [{'filename':'fixture.png'}]
+        assert len(saved) == len(histories) == 1
+        assert saved[0].prompt == test_generation_data['prompt']
+        assert saved[0].seed == test_generation_data['seed']
+
     def test_txt2img_model_name_handling(self, test_generation_data):
         """Test that model_name is properly handled in generation data"""
         # Test the data structure directly
@@ -61,25 +47,15 @@ class TestTxt2ImgServer:
         model_name = test_generation_data.get('model_name', 'default')
         assert model_name != 'unknown'
     
-    @patch('txt2img_server.requests.post')
-    def test_txt2img_comfyui_error_handling(self, mock_comfy_post, test_generation_data):
-        """Test error handling when ComfyUI fails"""
-        from txt2img_server import app
-        
-        # Mock ComfyUI error
-        mock_response = Mock()
-        mock_response.status_code = 500
-        mock_response.json.return_value = {'error': 'ComfyUI error'}
-        mock_comfy_post.return_value = mock_response
-        
-        with app.test_client() as client:
-            response = client.post('/api/txt2img', 
-                                 json=test_generation_data,
-                                 content_type='application/json')
-            
-            # Should handle error gracefully
-            assert response.status_code in [200, 500]
-    
+    def test_txt2img_comfyui_error_handling(self, monkeypatch, test_generation_data):
+        import txt2img_server as service
+        monkeypatch.setattr(service, 'send_to_comfyui', lambda workflow: {'error':'synthetic provider failure'})
+        with service.app.test_client() as client:
+            response = client.post('/api/txt2img', json=test_generation_data)
+        assert response.status_code == 502
+        assert response.json['status'] == 'error'
+        assert response.json['failures'][0]['reason'] == 'synthetic provider failure'
+
     def test_txt2img_invalid_data(self):
         """Test txt2img with invalid input data"""
         from txt2img_server import app
@@ -91,7 +67,7 @@ class TestTxt2ImgServer:
                                  content_type='application/json')
             
             # Should handle gracefully (may return error or use defaults)
-            assert response.status_code in [200, 400, 500]
+            assert response.status_code == 400
     
     def test_model_name_extraction(self):
         """Test model name extraction from request data"""

@@ -68,18 +68,18 @@ class TestClipScore:
         mock_save_db.assert_called_once_with(run_id, timestamp, clip_score)
     
     def test_clipscore_range_validation(self):
-        """Test that ClipScore values are in valid range [0, 1]"""
+        """Test that ClipScore values are in valid cosine range [-1, 1]"""
         # This would test the actual calculation if we had real images
         # For now, we test the validation logic
         
-        valid_scores = [0.0, 0.5, 1.0, 0.85, 0.123]
-        invalid_scores = [-0.1, 1.1, 2.0, -1.0]
+        valid_scores = [-1.0, -0.1, 0.0, 0.5, 1.0, 0.85, 0.123]
+        invalid_scores = [-1.1, 1.1, 2.0]
         
         for score in valid_scores:
-            assert 0.0 <= score <= 1.0, f"Score {score} should be valid"
+            assert -1.0 <= score <= 1.0, f"Score {score} should be valid"
         
         for score in invalid_scores:
-            assert not (0.0 <= score <= 1.0), f"Score {score} should be invalid"
+            assert not (-1.0 <= score <= 1.0), f"Score {score} should be invalid"
     
     @patch('os.path.exists')
     def test_clipscore_missing_image_handling(self, mock_exists):

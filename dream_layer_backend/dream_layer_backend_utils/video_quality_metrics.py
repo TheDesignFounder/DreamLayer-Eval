@@ -1,8 +1,9 @@
+from __future__ import annotations
 """
 Video Quality Metrics (No-Reference).
 
 Single-video evaluation metrics that don't require a reference video.
-Adapted from VBench (CVPR 2024).
+Custom stability heuristics; these are not standard VBench metrics.
 
 Metrics:
     - Temporal Flickering: frame-to-frame stability (pure math, no model)
@@ -18,8 +19,11 @@ from typing import Dict, List, Optional, Any
 
 import cv2
 import numpy as np
-import torch
-import torch.nn.functional as F
+try:
+    import torch
+    import torch.nn.functional as F
+except ImportError:
+    torch = F = None
 
 logger = logging.getLogger(__name__)
 
@@ -28,65 +32,21 @@ logger = logging.getLogger(__name__)
 # Video frame extraction
 # ---------------------------------------------------------------------------
 
-def extract_frames(video_path: str, max_frames: Optional[int] = None) -> List[np.ndarray]:
-    """Extract RGB frames from a video file.
-
-    Returns:
-        List of numpy arrays in RGB format (H, W, 3), uint8
-    """
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        raise RuntimeError(f"Failed to open video: {video_path}")
-
-    frames = []
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        if max_frames and len(frames) >= max_frames:
-            break
-    cap.release()
-
-    if not frames:
-        raise RuntimeError(f"No frames extracted from: {video_path}")
-
-    return frames
+def extract_frames(video_path, max_frames=None):
+    from research.media import sample_video
+    frames, _ = sample_video(video_path, count=max_frames or 32, max_side=768)
+    return [np.asarray(frame) for frame in frames]
 
 
 # ---------------------------------------------------------------------------
 # 1. Temporal Flickering (pure math)
 # ---------------------------------------------------------------------------
 
-def compute_temporal_flickering(video_path: str, max_frames: Optional[int] = None) -> Dict[str, Any]:
-    """Compute temporal flickering score.
-
-    Measures frame-to-frame stability using Mean Absolute Error (MAE).
-    Lower MAE = less flickering = higher score.
-
-    Returns:
-        dict with temporal_flickering_score (0-1, higher is better)
-        and per_frame_flicker (list of MAE values between consecutive frames)
-    """
-    frames = extract_frames(video_path, max_frames)
-
-    if len(frames) < 2:
-        return {"temporal_flickering_score": 1.0, "per_frame_flicker": []}
-
-    mae_values = []
-    for i in range(len(frames) - 1):
-        diff = cv2.absdiff(frames[i], frames[i + 1])
-        mae = float(np.mean(diff))
-        mae_values.append(mae)
-
-    mean_mae = float(np.mean(mae_values))
-    # Normalize: 0 MAE = perfect (score 1.0), 255 MAE = worst (score 0.0)
-    score = (255.0 - mean_mae) / 255.0
-
-    return {
-        "temporal_flickering_score": score,
-        "per_frame_flicker": mae_values,
-    }
+def compute_temporal_flickering(video_path, max_frames=None):
+    from research.media import adjacent_stability
+    score, provenance = adjacent_stability(video_path, max_pairs=max_frames or 4096)
+    return {'adjacent_pixel_stability': score, 'per_frame_flicker': provenance['per_pair_mae'],
+            'temporal_provenance': provenance, 'temporal_status': 'success' if score is not None else 'insufficient_data'}
 
 
 # ---------------------------------------------------------------------------
@@ -101,7 +61,7 @@ def _get_dino_model(device: torch.device):
     global _dino_model
     if _dino_model is None:
         logger.info("Loading DINO ViT-B/16 model...")
-        _dino_model = torch.hub.load('facebookresearch/dino:main', 'dino_vitb16', pretrained=True)
+        _dino_model = torch.jit.load(os.environ['DREAMLAYER_DINO_WEIGHTS'], map_location=device)
         _dino_model = _dino_model.to(device)
         _dino_model.eval()
         logger.info("DINO model loaded successfully")
@@ -157,7 +117,7 @@ def compute_subject_consistency(video_path: str, device: torch.device,
     frames = extract_frames(video_path, max_frames)
 
     if len(frames) < 2:
-        return {"subject_consistency_score": 1.0, "per_frame_subject_sim": []}
+        return {"whole_frame_anchored_dino_cosine": None, "per_frame_subject_sim": []}
 
     model = _get_dino_model(device)
     features = _compute_dino_features(frames, model, device)
@@ -172,7 +132,7 @@ def compute_subject_consistency(video_path: str, device: torch.device,
     score = float(np.mean(per_frame_sim))
 
     return {
-        "subject_consistency_score": score,
+        "whole_frame_anchored_dino_cosine": score,
         "per_frame_subject_sim": per_frame_sim,
     }
 
@@ -192,7 +152,7 @@ def compute_background_consistency(video_path: str, device: torch.device,
     frames = extract_frames(video_path, max_frames)
 
     if len(frames) < 2:
-        return {"background_consistency_score": 1.0, "per_frame_bg_sim": []}
+        return {"whole_frame_adjacent_dino_cosine": None, "per_frame_bg_sim": []}
 
     model = _get_dino_model(device)
     features = _compute_dino_features(frames, model, device)
@@ -205,7 +165,7 @@ def compute_background_consistency(video_path: str, device: torch.device,
     score = float(np.mean(per_frame_sim))
 
     return {
-        "background_consistency_score": score,
+        "whole_frame_adjacent_dino_cosine": score,
         "per_frame_bg_sim": per_frame_sim,
     }
 
@@ -214,54 +174,26 @@ def compute_background_consistency(video_path: str, device: torch.device,
 # 4. Motion Smoothness (OpenCV optical flow)
 # ---------------------------------------------------------------------------
 
-def compute_motion_smoothness(video_path: str,
-                              max_frames: Optional[int] = None) -> Dict[str, Any]:
-    """Compute motion smoothness using optical flow.
-
-    Measures how smoothly motion changes between frames using Farneback optical flow.
-    Smooth motion = small changes in flow magnitude between consecutive frame pairs.
-    Jerky motion = large, abrupt changes in flow.
-
-    Returns:
-        dict with motion_smoothness_score (0-1, higher is better)
-        and per_frame_motion (list of flow magnitude per frame pair)
-    """
-    frames = extract_frames(video_path, max_frames)
-
-    if len(frames) < 3:
-        return {"motion_smoothness_score": 1.0, "per_frame_motion": []}
-
-    # Convert to grayscale for optical flow
-    gray_frames = [cv2.cvtColor(f, cv2.COLOR_RGB2GRAY) for f in frames]
-
-    # Compute optical flow magnitude between consecutive frames
-    flow_magnitudes = []
-    for i in range(len(gray_frames) - 1):
-        flow = cv2.calcOpticalFlowFarneback(
-            gray_frames[i], gray_frames[i + 1],
-            None, 0.5, 3, 15, 3, 5, 1.2, 0
-        )
-        magnitude = np.sqrt(flow[..., 0] ** 2 + flow[..., 1] ** 2)
-        flow_magnitudes.append(float(np.mean(magnitude)))
-
-    # Smoothness = how stable the flow magnitude is over time
-    # Low variance in flow magnitude change = smooth motion
-    if len(flow_magnitudes) < 2:
-        return {"motion_smoothness_score": 1.0, "per_frame_motion": flow_magnitudes}
-
-    flow_diffs = []
-    for i in range(len(flow_magnitudes) - 1):
-        diff = abs(flow_magnitudes[i + 1] - flow_magnitudes[i])
-        flow_diffs.append(diff)
-
-    mean_diff = float(np.mean(flow_diffs))
-    # Normalize: typical flow diffs are 0-50 pixels; cap at 50 for scoring
-    score = max(0.0, 1.0 - mean_diff / 50.0)
-
-    return {
-        "motion_smoothness_score": score,
-        "per_frame_motion": flow_magnitudes,
-    }
+def compute_motion_smoothness(video_path, max_frames=None):
+    from research.media import decoded, frame_image, probe
+    metadata = probe(video_path)
+    previous = None
+    magnitudes, times = [], []
+    for _, ts, frame in decoded(video_path):
+        current = cv2.cvtColor(np.asarray(frame_image(frame, metadata['rotation'], 256)), cv2.COLOR_RGB2GRAY)
+        if times and ts == times[-1]:
+            continue
+        if len(times) >= (max_frames or 4096):
+            raise ValueError('Temporal decoding budget exceeded; choose an explicit contiguous window')
+        if previous is not None:
+            flow = cv2.calcOpticalFlowFarneback(previous,current,None,.5,3,15,3,5,1.2,0)
+            magnitudes.append(float(np.linalg.norm(flow,axis=2).mean()))
+        previous = current
+        times.append(ts)
+    score = max(0., 1-float(np.abs(np.diff(magnitudes)).mean())/50) if len(magnitudes)>1 else None
+    return {'flow_magnitude_stability': score, 'per_frame_motion': magnitudes,
+            'flow_timestamps': times, 'flow_status': 'success' if score is not None else 'insufficient_data',
+            'flow_definition': 'Custom changes of mean Farneback magnitude / 50px at max side 256; not motion quality'}
 
 
 # ---------------------------------------------------------------------------
@@ -331,64 +263,14 @@ def compute_video_aesthetic_quality(video_path: str,
 # Combined computation
 # ---------------------------------------------------------------------------
 
-def compute_all_quality_metrics(video_path: str, device: torch.device,
-                                max_frames: Optional[int] = None) -> Dict[str, Any]:
-    """Compute all no-reference video quality metrics.
-
-    Returns a combined dict with all metrics and an _errors list.
-    """
-    metrics = {}
-    errors = []
-
-    # Extract video FPS
-    try:
-        cap = cv2.VideoCapture(video_path)
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        cap.release()
-        if fps and fps > 0:
-            metrics["video_fps"] = float(fps)
-    except Exception:
-        pass
-
-    # 1. Temporal Flickering (fast, no model)
-    try:
-        flickering = compute_temporal_flickering(video_path, max_frames)
-        metrics.update(flickering)
-    except Exception as e:
-        logger.error(f"Temporal flickering failed: {e}")
-        errors.append(f"Temporal Flickering: {str(e)}")
-
-    # 2. Subject Consistency (DINO)
-    try:
-        subject = compute_subject_consistency(video_path, device, max_frames)
-        metrics.update(subject)
-    except Exception as e:
-        logger.error(f"Subject consistency failed: {e}")
-        errors.append(f"Subject Consistency: {str(e)}")
-
-    # 3. Background Consistency (DINO, reuses loaded model)
-    try:
-        background = compute_background_consistency(video_path, device, max_frames)
-        metrics.update(background)
-    except Exception as e:
-        logger.error(f"Background consistency failed: {e}")
-        errors.append(f"Background Consistency: {str(e)}")
-
-    # 4. Motion Smoothness (OpenCV, no model)
-    try:
-        smoothness = compute_motion_smoothness(video_path, max_frames)
-        metrics.update(smoothness)
-    except Exception as e:
-        logger.error(f"Motion smoothness failed: {e}")
-        errors.append(f"Motion Smoothness: {str(e)}")
-
-    # 5. Aesthetic Quality (reuses existing LAION model)
-    try:
-        aesthetic = compute_video_aesthetic_quality(video_path, max_frames)
-        metrics.update(aesthetic)
-    except Exception as e:
-        logger.error(f"Aesthetic quality failed: {e}")
-        errors.append(f"Aesthetic Quality: {str(e)}")
-
-    metrics["_quality_errors"] = errors
+def compute_all_quality_metrics(video_path, device=None, max_frames=None):
+    metrics, errors = {}, []
+    for function in (compute_temporal_flickering, compute_motion_smoothness):
+        try:
+            metrics.update(function(video_path, max_frames))
+        except Exception as exc:
+            errors.append(str(exc))
+    metrics['_quality_errors'] = errors
+    metrics['metric_version'] = 'custom-video-v2'
+    metrics['limitations'] = 'Pixel/flow stability only; static video can score well. No subject/background isolation or audio-quality claim.'
     return metrics

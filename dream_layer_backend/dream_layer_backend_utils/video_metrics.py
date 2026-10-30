@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Video Evaluation Metrics Calculator.
 
@@ -14,7 +15,10 @@ from typing import Dict, List, Optional, Any
 
 import cv2
 import numpy as np
-import torch
+try:
+    import torch
+except ImportError:
+    torch = None
 
 logger = logging.getLogger(__name__)
 
@@ -22,42 +26,12 @@ logger = logging.getLogger(__name__)
 # Video loading
 # ---------------------------------------------------------------------------
 
-def load_video_as_tensor(video_path: str, max_frames: Optional[int] = None) -> torch.Tensor:
-    """Load an mp4 video file as a tensor.
-
-    Args:
-        video_path: path to .mp4 file
-        max_frames: optional cap on number of frames to load
-
-    Returns:
-        Tensor of shape [1, T, 3, H, W] in [0, 1] float32
-    """
-    if not os.path.exists(video_path):
-        raise FileNotFoundError(f"Video not found: {video_path}")
-
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        raise RuntimeError(f"Failed to open video: {video_path}")
-
-    frames = []
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        # BGR -> RGB, HWC -> CHW, uint8 -> float32 [0,1]
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame = torch.from_numpy(frame).permute(2, 0, 1).float() / 255.0
-        frames.append(frame)
-        if max_frames and len(frames) >= max_frames:
-            break
-    cap.release()
-
-    if not frames:
-        raise RuntimeError(f"No frames extracted from video: {video_path}")
-
-    # [T, C, H, W] -> [1, T, C, H, W]
-    video_tensor = torch.stack(frames).unsqueeze(0)
-    return video_tensor
+def load_video_as_tensor(video_path, max_frames=None):
+    from research.media import sample_video
+    if torch is None:
+        raise ImportError('PyTorch required for tensor metrics')
+    frames, _ = sample_video(video_path, count=max_frames or 32, max_side=768)
+    return torch.from_numpy(np.stack([np.asarray(f) for f in frames]).copy()).permute(0,3,1,2).float().unsqueeze(0)/255
 
 
 # ---------------------------------------------------------------------------
@@ -141,45 +115,26 @@ def compute_video_ssim(videos1: torch.Tensor, videos2: torch.Tensor,
 def _psnr_frame(img1: np.ndarray, img2: np.ndarray) -> float:
     """Compute PSNR for a frame pair. Input: (C, H, W), values in [0, 1]."""
     mse = np.mean((img1.astype(np.float64) - img2.astype(np.float64)) ** 2)
-    if mse < 1e-10:
-        return 100.0
+    if mse == 0:
+        return float("inf")
     return float(20 * math.log10(1.0 / math.sqrt(mse)))
 
 
-def compute_video_psnr(videos1: torch.Tensor, videos2: torch.Tensor,
-                       per_frame: bool = False) -> Dict[str, Any]:
-    """Compute PSNR between two video tensors.
-
-    Args:
-        videos1, videos2: tensors of shape [B, T, C, H, W] in [0, 1]
-        per_frame: if True, return per-frame scores
-
-    Returns:
-        dict with video_psnr_mean, video_psnr_std, and optionally video_psnr_per_frame
-    """
-    assert videos1.shape == videos2.shape, "Video shapes must match"
-
-    all_frame_scores = []
-    for b in range(videos1.shape[0]):
-        for t in range(videos1.shape[1]):
-            img1 = videos1[b, t].numpy()
-            img2 = videos2[b, t].numpy()
-            all_frame_scores.append(_psnr_frame(img1, img2))
-
-    num_frames = videos1.shape[1]
-    per_frame_means = []
+def compute_video_psnr(videos1, videos2, per_frame=False):
+    if videos1.shape != videos2.shape or videos1.shape[1] < 1:
+        raise ValueError('Aligned nonempty video tensors with identical shapes required')
+    a=videos1.detach().cpu().numpy().astype(np.float64)
+    b=videos2.detach().cpu().numpy().astype(np.float64)
+    if not np.isfinite(a).all() or not np.isfinite(b).all():
+        raise ValueError('Nonfinite video tensor')
+    errors=np.mean((a-b)**2,axis=(0,2,3,4))
+    mse=float(np.mean(errors))
+    result={'video_psnr_mean':10*math.log10(1/mse) if mse else None,
+            'video_psnr_std':None,'psnr_special_value':'positive_infinity' if mse==0 else None,
+            'definition':'PSNR from pooled pixel MSE; infinity encoded explicitly'}
     if per_frame:
-        for t in range(num_frames):
-            frame_scores = [all_frame_scores[b * num_frames + t]
-                            for b in range(videos1.shape[0])]
-            per_frame_means.append(float(np.mean(frame_scores)))
-
-    result = {
-        "video_psnr_mean": float(np.mean(all_frame_scores)),
-        "video_psnr_std": float(np.std(all_frame_scores)),
-    }
-    if per_frame:
-        result["video_psnr_per_frame"] = per_frame_means
+        result['video_psnr_per_frame']=[10*math.log10(1/e) if e else None for e in errors]
+        result['video_psnr_per_frame_special']=['positive_infinity' if e==0 else None for e in errors]
     return result
 
 
@@ -288,85 +243,37 @@ class VideoMetricsCalculator:
     """Calculator for video evaluation metrics."""
 
     def __init__(self):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else
-                                   'mps' if torch.backends.mps.is_available() else 'cpu')
-        logger.info(f"VideoMetricsCalculator initialized on device: {self.device}")
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') if torch else None
 
-    def compute_all(self, video_path: str, reference_path: Optional[str] = None,
-                    per_frame: bool = True) -> Dict[str, Any]:
-        """Compute all applicable video metrics.
-
-        Args:
-            video_path: path to the generated video
-            reference_path: optional path to a reference video (for SSIM/PSNR/LPIPS)
-            per_frame: whether to include per-frame breakdowns
-
-        Returns:
-            dict with all computed metrics and _errors list
-        """
-        metrics = {}
-        errors = []
-
-        video_tensor = load_video_as_tensor(video_path)
-        logger.info(f"Loaded video: {video_path}, shape: {video_tensor.shape}")
-
-        # Reference-based metrics (SSIM, PSNR, LPIPS)
+    def compute_all(self, video_path, reference_path=None, per_frame=True, alignment=None):
+        from research.media import sample_video
+        from research.metrics import aligned_psnr
+        from .video_quality_metrics import compute_all_quality_metrics
+        metrics = compute_all_quality_metrics(video_path, self.device)
+        metrics['_errors'] = metrics.pop('_quality_errors', [])
+        metrics['fvd_score'] = None
+        metrics['fvd_status'] = 'not_applicable'
+        metrics['fvd_reason'] = 'FVD requires two explicit video sets; use Research workbench'
         if reference_path:
-            ref_tensor = load_video_as_tensor(reference_path)
-
-            # Match frame counts by truncating to shorter
-            min_frames = min(video_tensor.shape[1], ref_tensor.shape[1])
-            v1 = video_tensor[:, :min_frames]
-            v2 = ref_tensor[:, :min_frames]
-
-            # Match spatial dimensions by resizing reference to match generated
-            if v1.shape[3:] != v2.shape[3:]:
-                h, w = v1.shape[3], v1.shape[4]
-                v2_resized = []
-                for t in range(v2.shape[1]):
-                    frame = torch.nn.functional.interpolate(
-                        v2[:, t], size=(h, w), mode='bilinear', align_corners=False
-                    )
-                    v2_resized.append(frame)
-                v2 = torch.stack(v2_resized, dim=1)
-
-            try:
-                ssim_result = compute_video_ssim(v1, v2, per_frame=per_frame)
-                metrics.update(ssim_result)
-            except Exception as e:
-                logger.error(f"SSIM computation failed: {e}")
-                errors.append(f"SSIM: {str(e)}")
-
-            try:
-                psnr_result = compute_video_psnr(v1, v2, per_frame=per_frame)
-                metrics.update(psnr_result)
-            except Exception as e:
-                logger.error(f"PSNR computation failed: {e}")
-                errors.append(f"PSNR: {str(e)}")
-
-            try:
-                lpips_result = compute_video_lpips(v1, v2, self.device, per_frame=per_frame)
-                metrics.update(lpips_result)
-            except Exception as e:
-                logger.error(f"LPIPS computation failed: {e}")
-                errors.append(f"LPIPS: {str(e)}")
-
-        # FVD requires two *sets* of videos (distribution metric)
-        # For single video comparison, FVD is not applicable
-        metrics["fvd_score"] = None
-
-        # No-reference quality metrics (always computed)
-        try:
-            from .video_quality_metrics import compute_all_quality_metrics
-            quality_metrics = compute_all_quality_metrics(video_path, self.device)
-            quality_errors = quality_metrics.pop("_quality_errors", [])
-            metrics.update(quality_metrics)
-            errors.extend(quality_errors)
-        except Exception as e:
-            logger.error(f"Quality metrics computation failed: {e}")
-            errors.append(f"Quality Metrics: {str(e)}")
-
-        metrics["_errors"] = errors
+            if alignment != 'exact_pts_pixels':
+                metrics['reference_status'] = 'not_applicable'
+                metrics['_errors'].append('Pixel-based references require explicit exact_pts_pixels alignment')
+            else:
+                try:
+                    score, details = aligned_psnr(video_path, reference_path, {'alignment': alignment, 'frames': 32})
+                    metrics.update(video_psnr_mean=score, psnr_special_value='positive_infinity' if details['positive_infinity'] else None,
+                                   reference_provenance=details, reference_status='success')
+                    a = load_video_as_tensor(video_path, 32)
+                    b = load_video_as_tensor(reference_path, 32)
+                    metrics.update(compute_video_ssim(a,b,per_frame=per_frame))
+                    try:
+                        metrics.update(compute_video_lpips(a,b,self.device,per_frame=per_frame))
+                    except Exception as exc:
+                        metrics['lpips_status'] = 'unavailable_dependency'
+                        metrics['_errors'].append(str(exc))
+                except Exception as exc:
+                    metrics['reference_status'] = 'failed_evaluation'
+                    metrics['_errors'].append(str(exc))
         return metrics
 
 

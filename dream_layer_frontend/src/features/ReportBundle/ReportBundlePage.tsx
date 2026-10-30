@@ -196,19 +196,16 @@ const ReportBundlePage: React.FC = () => {
                         <span>CFG: {run.cfg_scale}</span>
                         <span>Images: {run.generated_images?.length || 0}</span>
                         {run.clip_score_mean !== null && (
-                          <span>ClipScore: {run.clip_score_mean?.toFixed(3) || "N/A"}</span>
-                        )}
-                        {run.fid_score !== null && (
-                          <span>FID: {run.fid_score?.toFixed(3) || "N/A"}</span>
+                          <span>CLIP cosine: {run.clip_score_mean?.toFixed(3) ?? "N/A"}</span>
                         )}
                         {run.macro_precision !== undefined && (
-                          <span>Precision: {run.macro_precision?.toFixed(3) ?? "N/A"}</span>
+                          <span>Legacy detector precision: {run.macro_precision?.toFixed(3) ?? "N/A"}</span>
                         )}
                         {run.macro_recall !== undefined && (
-                          <span>Recall: {run.macro_recall?.toFixed(3) ?? "N/A"}</span>
+                          <span>Legacy detector recall: {run.macro_recall?.toFixed(3) ?? "N/A"}</span>
                         )}
                         {run.macro_f1 !== undefined && (
-                          <span>F1: {run.macro_f1?.toFixed(3) ?? "N/A"}</span>
+                          <span>Legacy detector F1: {run.macro_f1?.toFixed(3) ?? "N/A"}</span>
                         )}
                       </div>
                     </div>

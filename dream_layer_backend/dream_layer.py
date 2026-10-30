@@ -1,3 +1,6 @@
+import sys as _research_sys
+from pathlib import Path as _ResearchPath
+_research_sys.path.insert(0, str(_ResearchPath(__file__).resolve().parent.parent))
 import os
 import sys
 import threading
@@ -31,10 +34,8 @@ API_KEY_TO_MODELS = {
         {"id": "ideogram-v3", "name": "Ideogram V3", "filename": "ideogram-v3"},
     ],
     "STABILITY_API_KEY": [
-        {"id": "stability-sdxl", "name": "Stability SDXL",
-            "filename": "stability-sdxl"},
-        {"id": "stability-sd-turbo", "name": "Stability SD Turbo",
-            "filename": "stability-sd-turbo"}
+        {"id": "stability-ultra", "name": "Stability Stable Image Ultra",
+            "filename": "stability-ultra"}
     ],
     "GEMINI_API_KEY": [
         {"id": "gemini-pro-vision", "name": "Gemini Pro Vision", "filename": "gemini-pro-vision"},
@@ -56,7 +57,7 @@ def get_directories() -> Tuple[str, Optional[str]]:
     settings = get_settings()
 
     # Handle output directory
-    output_dir = settings.get('outputDirectory')
+    output_dir = os.getenv('DREAMLAYER_OUTPUT_DIR') or settings.get('outputDirectory')
 
     # Validate output directory
     if not is_valid_directory(output_dir):
@@ -134,6 +135,8 @@ def import_comfyui_main():
 
 # Create Flask app
 app = Flask(__name__)
+from research.api import blueprint as research_blueprint
+app.register_blueprint(research_blueprint())
 
 # Configure CORS to allow requests from frontend
 CORS(app, resources={
@@ -676,436 +679,58 @@ def get_controlnet_models_endpoint():
 
 @app.route('/api/calculate-metrics', methods=['POST', 'OPTIONS'])
 def calculate_metrics():
-    """Calculate evaluation metrics (CLIP score, etc.) for an image"""
+    """Compatibility image route over the same versioned research evaluators."""
     if request.method == 'OPTIONS':
-        response = jsonify({'status': 'ok'})
-        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        return response
-
+        return jsonify({'status':'ok'})
     try:
-        data = request.json
-        image_url = data.get('image_url')
-        input_image_url = data.get('input_image_url')  # For img2img reference
-        prompt = data.get('prompt', '')
-
-        if not image_url:
-            return jsonify({"status": "error", "message": "No image_url provided"}), 400
-
-        # Extract filename from URL and find the actual file path
-        from urllib.parse import urlparse
-        parsed_url = urlparse(image_url)
-        filename = os.path.basename(parsed_url.path)
-
-        # Find the image in output directory
+        from urllib.parse import urlparse, unquote
+        from pathlib import Path
+        from research.contracts import record, digest, file_hash
+        from research.media import probe
+        from research.metrics import evaluate, cache_key
+        from research.store import Store
+        data = request.get_json() or {}
+        if not data.get('image_url'):
+            return jsonify({'status':'error','message':'No image_url provided'}),400
+        filename = os.path.basename(unquote(urlparse(data['image_url']).path))
         output_dir, _ = get_directories()
-        image_path = os.path.join(output_dir, filename)
-
-        # Also check served_images directory
-        if not os.path.exists(image_path):
-            served_images_dir = os.path.join(current_dir, 'served_images')
-            image_path = os.path.join(served_images_dir, filename)
-
-        if not os.path.exists(image_path):
-            return jsonify({"status": "error", "message": f"Image file not found: {filename}"}), 404
-
-        # Handle reference/input image for img2img
-        input_image_path = None
-        if input_image_url:
-            parsed_input_url = urlparse(input_image_url)
-            input_filename = os.path.basename(parsed_input_url.path)
-
-            # Check multiple directories for input image
-            possible_dirs = [
-                output_dir,
-                os.path.join(current_dir, 'served_images'),
-                os.path.join(current_dir, '..', 'ComfyUI', 'input'),
-                os.path.join(current_dir, '..', 'Dream_Layer_Resources', 'input'),
-            ]
-
-            for dir_path in possible_dirs:
-                potential_path = os.path.join(dir_path, input_filename)
-                if os.path.exists(potential_path):
-                    input_image_path = potential_path
-                    break
-
-            if not input_image_path:
-                print(f"Warning: Input image not found: {input_filename}, will skip reference-based metrics")
-
-        # Calculate all available metrics
-        metrics = {}
-        errors = []
-
+        candidates = [Path(output_dir)/filename, Path(current_dir)/'served_images'/filename]
+        image_path = next((p for p in candidates if p.is_file()),None)
+        if image_path is None:
+            return jsonify({'status':'error','message':'Image file not found'}),404
+        media_info = probe(image_path)
+        asset = record('asset', id=file_hash(image_path), sha256=file_hash(image_path), locator=str(image_path.resolve()),
+                       original_filename=filename, media=media_info)
+        db = Store(os.getenv('DREAMLAYER_RESEARCH_DB', str(Path(current_dir).parent/'.research/research.sqlite3')))
+        # Locators can change while content remains identical; retain the original valid locator.
         try:
-            import torch
-            from PIL import Image
-            import numpy as np
-
-            # Load the output image
-            image_pil = Image.open(image_path).convert('RGB')
-
-            # Load input/reference image if available
-            input_image_pil = None
-            if input_image_path:
-                try:
-                    input_image_pil = Image.open(input_image_path).convert('RGB')
-                    print(f"Loaded reference image for comparison: {input_image_path}")
-                except Exception as e:
-                    print(f"Warning: Could not load reference image: {e}")
-                    input_image_pil = None
-
-            # CLIP Score
-            try:
-                from dream_layer_backend_utils.clip_score_metrics import get_clip_calculator
-                clip_calc = get_clip_calculator()
-                clip_score = clip_calc.compute_clip_score(prompt, image_path)
-
-                metrics.update({
-                    "clip_score_mean": clip_score,
-                    "clip_score_median": clip_score,
-                    "clip_score_std": 0.0,
-                    "clip_score_max": clip_score,
-                    "clip_score_min": clip_score,
-                })
-            except Exception as e:
-                errors.append(f"CLIP: {str(e)}")
-                print(f"Warning: Could not calculate CLIP score: {e}")
-
-            # Reference-based metrics (only if input image available)
-            if input_image_pil:
-                # LPIPS (Learned Perceptual Image Patch Similarity)
-                try:
-                    from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
-
-                    # Convert images to tensors
-                    output_tensor = torch.from_numpy(np.array(image_pil)).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-                    input_tensor = torch.from_numpy(np.array(input_image_pil)).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-
-                    # Resize if dimensions don't match
-                    if output_tensor.shape != input_tensor.shape:
-                        from torchvision.transforms import Resize
-                        target_size = output_tensor.shape[2:]
-                        input_tensor = torch.nn.functional.interpolate(input_tensor, size=target_size, mode='bilinear', align_corners=False)
-
-                    lpips_metric = LearnedPerceptualImagePatchSimilarity(net_type='alex')
-                    lpips_score = lpips_metric(output_tensor, input_tensor).item()
-
-                    metrics["lpips_score"] = lpips_score
-
-                except Exception as e:
-                    errors.append(f"LPIPS: {str(e)}")
-                    print(f"Warning: Could not calculate LPIPS: {e}")
-
-                # SSIM (Structural Similarity Index)
-                try:
-                    from torchmetrics.image import StructuralSimilarityIndexMeasure
-
-                    # Convert images to tensors if not already done
-                    if 'output_tensor' not in locals():
-                        output_tensor = torch.from_numpy(np.array(image_pil)).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-                        input_tensor = torch.from_numpy(np.array(input_image_pil)).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-
-                    # Resize if dimensions don't match
-                    if output_tensor.shape != input_tensor.shape:
-                        target_size = output_tensor.shape[2:]
-                        input_tensor = torch.nn.functional.interpolate(input_tensor, size=target_size, mode='bilinear', align_corners=False)
-
-                    ssim_metric = StructuralSimilarityIndexMeasure(data_range=1.0)
-                    ssim_score = ssim_metric(output_tensor, input_tensor).item()
-
-                    metrics["ssim_score"] = ssim_score
-
-                except Exception as e:
-                    errors.append(f"SSIM: {str(e)}")
-                    print(f"Warning: Could not calculate SSIM: {e}")
-
-                # PSNR (Peak Signal-to-Noise Ratio)
-                try:
-                    from torchmetrics.image import PeakSignalNoiseRatio
-
-                    # Convert images to tensors if not already done
-                    if 'output_tensor' not in locals():
-                        output_tensor = torch.from_numpy(np.array(image_pil)).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-                        input_tensor = torch.from_numpy(np.array(input_image_pil)).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-
-                    # Resize if dimensions don't match
-                    if output_tensor.shape != input_tensor.shape:
-                        target_size = output_tensor.shape[2:]
-                        input_tensor = torch.nn.functional.interpolate(input_tensor, size=target_size, mode='bilinear', align_corners=False)
-
-                    psnr_metric = PeakSignalNoiseRatio(data_range=1.0)
-                    psnr_score = psnr_metric(output_tensor, input_tensor).item()
-
-                    # Cap at reasonable value if infinity
-                    if np.isinf(psnr_score) or psnr_score > 100:
-                        psnr_score = 100.0
-
-                    metrics["psnr_score"] = psnr_score
-
-                except Exception as e:
-                    errors.append(f"PSNR: {str(e)}")
-                    print(f"Warning: Could not calculate PSNR: {e}")
-
-            # FID Score (Fréchet Inception Distance) - compares against CIFAR-10 dataset
-            try:
-                import sys
-                sys.path.append(os.path.join(os.path.dirname(__file__), 'data', 'scripts'))
-                from fid_integration import DatabaseFidCalculator
-
-                fid_calc = DatabaseFidCalculator()
-                if fid_calc.fid_calculator:
-                    # FID requires a list of images, pass single image
-                    fid_score = fid_calc._compute_fid_from_images([image_path])
-
-                    if fid_score is not None and fid_score >= 0:
-                        metrics["fid_score"] = fid_score
-                        print(f"FID score calculated: {fid_score:.2f}")
-                    else:
-                        print("FID calculation returned invalid score")
-                else:
-                    print("FID calculator not initialized (CIFAR-10 stats may be missing)")
-
-            except Exception as e:
-                errors.append(f"FID: {str(e)}")
-                print(f"Warning: Could not calculate FID score: {e}")
-                import traceback
-                traceback.print_exc()
-
-            # Composition Metrics (Object Detection + Visual Composition)
-            try:
-                from dream_layer_backend_utils.composition_metrics import calculate_composition_metrics
-
-                composition_results = calculate_composition_metrics(prompt, image_path)
-
-                # Add object detection metrics
-                if composition_results.get("object_f1") is not None:
-                    metrics["object_precision"] = composition_results.get("object_precision")
-                    metrics["object_recall"] = composition_results.get("object_recall")
-                    metrics["object_f1"] = composition_results.get("object_f1")
-                    metrics["detected_objects"] = composition_results.get("detected_objects", {})
-                    metrics["missing_objects"] = composition_results.get("missing_objects", {})
-
-                # Add visual composition metrics
-                if composition_results.get("composition_score") is not None:
-                    metrics["composition_score"] = composition_results.get("composition_score")
-                    metrics["rule_of_thirds_score"] = composition_results.get("rule_of_thirds_score")
-                    metrics["symmetry_score"] = composition_results.get("symmetry_score")
-                    metrics["balance_score"] = composition_results.get("balance_score")
-
-                print(f"Composition metrics calculated successfully")
-
-            except Exception as e:
-                errors.append(f"Composition: {str(e)}")
-                print(f"Warning: Could not calculate composition metrics: {e}")
-                import traceback
-                traceback.print_exc()
-
-            # Aesthetic Quality Metrics (LAION Aesthetic, Color Harmony, Technical Quality)
-            try:
-                from dream_layer_backend_utils.aesthetic_metrics import calculate_aesthetic_metrics
-
-                aesthetic_results = calculate_aesthetic_metrics(image_path)
-
-                # Add LAION aesthetic score
-                if aesthetic_results.get("aesthetics_score") is not None:
-                    metrics["aesthetics_score"] = aesthetic_results.get("aesthetics_score")
-
-                # Add color harmony metrics
-                if aesthetic_results.get("color_harmony_score") is not None:
-                    metrics["color_harmony_score"] = aesthetic_results.get("color_harmony_score")
-                    metrics["saturation_balance"] = aesthetic_results.get("saturation_balance")
-                    metrics["value_contrast"] = aesthetic_results.get("value_contrast")
-
-                # Add technical quality metrics
-                if aesthetic_results.get("technical_quality_score") is not None:
-                    metrics["technical_quality_score"] = aesthetic_results.get("technical_quality_score")
-                    metrics["sharpness_score"] = aesthetic_results.get("sharpness_score")
-                    metrics["noise_level"] = aesthetic_results.get("noise_level")
-                    metrics["artifact_score"] = aesthetic_results.get("artifact_score")
-
-                # Overall aesthetic quality
-                if aesthetic_results.get("overall_aesthetic_quality") is not None:
-                    metrics["overall_aesthetic_quality"] = aesthetic_results.get("overall_aesthetic_quality")
-
-                print(f"Aesthetic metrics calculated successfully")
-
-            except Exception as e:
-                errors.append(f"Aesthetic: {str(e)}")
-                print(f"Warning: Could not calculate aesthetic metrics: {e}")
-                import traceback
-                traceback.print_exc()
-
-            # Add timestamp
-            metrics["computed_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-
-            # Add any errors to response for debugging
-            if errors:
-                metrics["_errors"] = errors
-
-            # Save all metrics to DB for caching
-            try:
-                from data.scripts.database import DreamLayerDB
-                import json as json_lib
-                db = DreamLayerDB()
-
-                # Find run_id by filename
-                with db.get_connection() as conn:
-                    cursor = conn.execute("""
-                        SELECT run_id, timestamp FROM runs
-                        WHERE generation_type IN ('txt2img', 'img2img')
-                        AND generated_images LIKE ?
-                        ORDER BY timestamp DESC LIMIT 1
-                    """, (f'%{filename}%',))
-                    run_row = cursor.fetchone()
-
-                if run_row:
-                    run_id = run_row['run_id']
-                    run_ts = run_row['timestamp']
-
-                    # Build metadata with all extra scores (composition + aesthetic)
-                    extra_metadata = {}
-                    for key in ['composition_score', 'rule_of_thirds_score', 'symmetry_score', 'balance_score',
-                                'aesthetics_score', 'color_harmony_score', 'saturation_balance', 'value_contrast',
-                                'technical_quality_score', 'sharpness_score', 'noise_level', 'artifact_score',
-                                'overall_aesthetic_quality']:
-                        if metrics.get(key) is not None:
-                            extra_metadata[key] = metrics[key]
-
-                    # Save CLIP/FID + metadata
-                    db.upsert_metric(
-                        run_id=run_id,
-                        timestamp=run_ts,
-                        clip_score_mean=metrics.get('clip_score_mean'),
-                        fid_score=metrics.get('fid_score'),
-                        metadata=extra_metadata if extra_metadata else None
-                    )
-
-                    # Save composition metrics (object detection)
-                    if metrics.get('object_f1') is not None:
-                        comp_metrics = {
-                            'macro_precision': metrics.get('object_precision', 0.0),
-                            'macro_recall': metrics.get('object_recall', 0.0),
-                            'macro_f1': metrics.get('object_f1', 0.0),
-                            'detected_objects': metrics.get('detected_objects', {}),
-                            'missing_objects': metrics.get('missing_objects', {}),
-                            'per_class_metrics': {},
-                        }
-                        db.upsert_composition_metrics(
-                            run_id=run_id,
-                            timestamp=run_ts,
-                            prompt_text=prompt,
-                            image_path=image_path,
-                            metrics=comp_metrics
-                        )
-
-                    print(f"Saved image metrics to DB for run {run_id}")
-            except Exception as e:
-                print(f"Warning: Could not save metrics to DB: {e}")
-
-            return jsonify({
-                "status": "success",
-                "metrics": metrics
-            })
-
-        except ImportError as e:
-            print(f"Warning: Metrics modules not available: {e}")
-            return jsonify({
-                "status": "error",
-                "message": f"Metrics modules not available: {str(e)}"
-            }), 500
-
-    except Exception as e:
-        print(f"Error calculating metrics: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": str(e)}), 500
+            existing = db.get(asset['id'])
+            asset = existing
+        except KeyError:
+            db.put(asset)
+        outputs = []
+        for metric in ('clip_cosine','object_criteria','pixel_luminance'):
+            defaults = {'clip_cosine': {'revision':os.getenv('DREAMLAYER_CLIP_REVISION')}, 'object_criteria': {'weights':os.getenv('DREAMLAYER_YOLO_WEIGHTS')}}
+            config = {**defaults.get(metric,{}), **data.get('evaluator_settings',{}).get(metric,{})}
+            key = cache_key(metric,[asset],data.get('prompt',''),config)
+            output = db.cached(key)
+            if output is None or (data.get('rerun_failed') and output['status'] in {'failed_evaluation','unavailable_dependency'}):
+                output = evaluate(metric,[asset],data.get('prompt',''),config)
+                db.cache(key,output)
+            outputs.append(output)
+        by_id = {r['metric_id']:r for r in outputs}
+        metrics = {'clip_score_mean': by_id['clip_cosine']['score'], 'criterion_pass_rate': by_id['object_criteria']['score'],
+                   'object_criteria_result': by_id['object_criteria'], 'pixel_luminance': by_id['pixel_luminance']['score'],
+                   'fid_score':None,'fid_status':'not_applicable','research_results':outputs,
+                   '_errors':[r['reason'] for r in outputs if r['status']!='success']}
+        return jsonify({'status':'success','metrics':metrics})
+    except (ValueError, OSError) as exc:
+        return jsonify({'status':'error','message':str(exc)}),400
 
 
 @app.route('/api/image-metrics-cache/<filename>', methods=['GET'])
 def get_image_metrics_cache(filename):
-    """Look up cached image metrics by filename (no computation)."""
-    try:
-        from data.scripts.database import DreamLayerDB
-        import json as json_lib
-        db = DreamLayerDB()
-
-        # Find run_id by filename
-        with db.get_connection() as conn:
-            cursor = conn.execute("""
-                SELECT r.run_id FROM runs r
-                WHERE r.generation_type IN ('txt2img', 'img2img')
-                AND r.generated_images LIKE ?
-                ORDER BY r.timestamp DESC LIMIT 1
-            """, (f'%{filename}%',))
-            row = cursor.fetchone()
-
-        if not row:
-            return jsonify({"status": "not_found"}), 404
-
-        run_id = row['run_id']
-        metrics = {}
-
-        # Get CLIP/FID metrics
-        with db.get_connection() as conn:
-            cursor = conn.execute("SELECT * FROM metrics WHERE run_id = ?", (run_id,))
-            m_row = cursor.fetchone()
-            if m_row:
-                m = dict(m_row)
-                if m.get('clip_score_mean') is not None:
-                    metrics['clip_score_mean'] = m['clip_score_mean']
-                if m.get('fid_score') is not None:
-                    metrics['fid_score'] = m['fid_score']
-                # Parse metadata for additional scores
-                if m.get('metadata'):
-                    try:
-                        meta = json_lib.loads(m['metadata'])
-                        metrics.update(meta)
-                    except:
-                        pass
-
-        # Get composition metrics
-        with db.get_connection() as conn:
-            cursor = conn.execute("SELECT * FROM composition_metrics WHERE run_id = ?", (run_id,))
-            c_row = cursor.fetchone()
-            if c_row:
-                c = dict(c_row)
-                for key in ['macro_precision', 'macro_recall', 'macro_f1']:
-                    if c.get(key) is not None:
-                        metrics[key] = c[key]
-                # Map to frontend field names
-                if c.get('macro_precision') is not None:
-                    metrics['object_precision'] = c['macro_precision']
-                    metrics['object_recall'] = c['macro_recall']
-                    metrics['object_f1'] = c['macro_f1']
-                for json_field in ['detected_objects', 'missing_objects']:
-                    if c.get(json_field):
-                        try:
-                            metrics[json_field] = json_lib.loads(c[json_field])
-                        except:
-                            pass
-                if c.get('metadata'):
-                    try:
-                        meta = json_lib.loads(c['metadata'])
-                        metrics.update(meta)
-                    except:
-                        pass
-
-        if not metrics:
-            return jsonify({"status": "not_found"}), 404
-
-        # Use the actual timestamp from metrics table if available
-        if m_row and dict(m_row).get('timestamp'):
-            metrics['computed_at'] = dict(m_row)['timestamp']
-        else:
-            from datetime import datetime as dt
-            metrics['computed_at'] = dt.now().isoformat()
-        metrics['_cached'] = True
-
-        return jsonify({"status": "success", "metrics": metrics, "run_id": run_id})
-
-    except Exception as e:
-        print(f"Error looking up cached image metrics: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+    return jsonify({'status':'not_found','reason':'Legacy filename-only cache invalidated; use content and evaluator identities'}),404
 
 
 if __name__ == "__main__":

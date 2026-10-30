@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "name": "Local ComfyUI workflow template v1",
+  "models": [
+    "my-workflow"
+  ],
+  "prompts": [
+    {
+      "id": "p1",
+      "text": "Two dogs beside a fire hydrant",
+      "group_id": "family-1",
+      "split": "development"
+    }
+  ],
+  "parameters": {
+    "my-workflow": {
+      "seed": 42,
+      "steps": 20
+    }
+  },
+  "repetitions": 2,
+  "concurrency": 1,
+  "rate_limit_seconds": 1,
+  "metrics": [
+    {
+      "id": "pixel_luminance"
+    }
+  ],
+  "generation": {
+    "base_url": "http://127.0.0.1:8188",
+    "allow_provider_calls": false,
+    "workflow_path": "/REPLACE/exported-api-workflow.json",
+    "bindings": {
+      "prompt": [
+        [
+          "6",
+          "text"
+        ]
+      ],
+      "negative_prompt": [
+        [
+          "7",
+          "text"
+        ]
+      ],
+      "seed": [
+        [
+          "3",
+          "seed"
+        ]
+      ],
+      "steps": [
+        [
+          "3",
+          "steps"
+        ]
+      ]
+    },
+    "identity": {
+      "provider": "ComfyUI",
+      "model": "REPLACE actual checkpoint/API model",
+      "endpoint": "http://127.0.0.1:8188/prompt",
+      "version": null
+    }
+  }
+}

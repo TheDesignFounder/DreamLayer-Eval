@@ -1,0 +1,8 @@
+# Optional feature smoke environment; tested platform: macOS x86_64 / Python 3.11.
+-r requirements-research.txt
+torch==2.2.2
+torchvision==0.17.2
+pytorch-fid==0.3.0
+transformers==4.44.2
+opencv-python-headless==4.10.0.84
+PyYAML==6.0.2

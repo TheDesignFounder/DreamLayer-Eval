@@ -55,8 +55,10 @@ class DreamLayerQueries:
                     'image_paths': ','.join([asset['asset_value'] for asset in assets]),
                     
                     # Metrics (with defaults for missing values)
-                    'clip_score_mean': run['metrics'].get('clip_score_mean', 0.0),
-                    'fid_score': run['metrics'].get('fid_score', 0.0),
+                    'clip_score_mean': run['metrics'].get('clip_score_mean'),
+                    'fid_score': run['metrics'].get('fid_score'),
+                    'legacy_fid_score': run['metrics'].get('legacy_fid_score'),
+                    'fid_status': run['metrics'].get('fid_status'),
                 }
                 
                 csv_formatted_runs.append(csv_run)
@@ -155,30 +157,9 @@ class DreamLayerQueries:
         """Save composition metrics for a run"""
         return self.db.upsert_composition_metrics(run_id, timestamp, prompt_text, image_path, metrics)
     
-    def get_composition_metrics(self, run_id: str) -> Optional[Dict[str, Any]]:
-        """Get composition metrics for a run"""
-        try:
-            with self.db.get_connection() as conn:
-                cursor = conn.execute("""
-                    SELECT * FROM composition_metrics WHERE run_id = ? ORDER BY timestamp DESC LIMIT 1
-                """, (run_id,))
-                row = cursor.fetchone()
-                
-                if row:
-                    metrics = dict(row)
-                    # Parse JSON fields
-                    for field in ['per_class_metrics', 'detected_objects', 'missing_objects']:
-                        if metrics.get(field):
-                            try:
-                                metrics[field] = json.loads(metrics[field])
-                            except (json.JSONDecodeError, TypeError):
-                                metrics[field] = {}
-                    return metrics
-                return None
-        except Exception as e:
-            logger.error(f"Error getting composition metrics for run {run_id}: {e}")
-            return None
-    
+    def get_composition_metrics(self, run_id):
+        return self.db.get_composition_metrics(run_id)
+
     def get_runs_without_clip_score(self, limit: int = None) -> List[Dict[str, Any]]:
         """Get runs that don't have ClipScore calculated yet"""
         try:
@@ -200,26 +181,8 @@ class DreamLayerQueries:
             logger.error(f"Error getting runs without ClipScore: {e}")
             return []
     
-    def get_runs_without_fid_score(self, limit: int = None) -> List[Dict[str, Any]]:
-        """Get runs that don't have FID calculated yet"""
-        try:
-            with self.db.get_connection() as conn:
-                query = """
-                    SELECT r.* FROM runs r
-                    LEFT JOIN metrics m ON r.run_id = m.run_id
-                    WHERE m.fid_score IS NULL
-                    ORDER BY r.timestamp DESC
-                """
-                
-                if limit:
-                    query += f" LIMIT {limit}"
-                
-                cursor = conn.execute(query)
-                return [dict(row) for row in cursor.fetchall()]
-                
-        except Exception as e:
-            logger.error(f"Error getting runs without FID: {e}")
-            return []
+    def get_runs_without_fid_score(self, limit=None):
+        return []  # Dataset FID has no per-run pending state.
     
     def get_runs_without_composition_metrics(self, limit: int = None) -> List[Dict[str, Any]]:
         """Get runs that don't have composition metrics calculated yet"""
@@ -228,7 +191,7 @@ class DreamLayerQueries:
                 query = """
                     SELECT r.* FROM runs r
                     LEFT JOIN composition_metrics cm ON r.run_id = cm.run_id
-                    WHERE cm.run_id IS NULL
+                    WHERE cm.run_id IS NULL AND NOT EXISTS (SELECT 1 FROM research_records rr WHERE rr.kind='result' AND json_extract(rr.payload,'$.source_run_id')=r.run_id AND json_extract(rr.payload,'$.metric_id')='object_criteria')
                     ORDER BY r.timestamp DESC
                 """
                 
@@ -257,10 +220,7 @@ class DreamLayerQueries:
                         AVG(clip_score_mean) as clip_avg,
                         MIN(clip_score_mean) as clip_min,
                         MAX(clip_score_mean) as clip_max,
-                        COUNT(fid_score) as fid_count,
-                        AVG(fid_score) as fid_avg,
-                        MIN(fid_score) as fid_min,
-                        MAX(fid_score) as fid_max
+                        COUNT(fid_score) as fid_count
                     FROM metrics
                 """)
                 
@@ -277,11 +237,10 @@ class DreamLayerQueries:
                         }
                     
                     if row['fid_count'] > 0:
-                        summary['fid_score'] = {
+                        summary['legacy_fid_score'] = {
                             'count': row['fid_count'],
-                            'average': row['fid_avg'],
-                            'minimum': row['fid_min'],
-                            'maximum': row['fid_max']
+                            'status': 'invalid_legacy_result',
+                            'reason': 'Per-run FID values are not a distribution-level FID; aggregation disabled'
                         }
                     
                     return summary

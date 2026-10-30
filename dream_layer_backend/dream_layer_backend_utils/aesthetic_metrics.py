@@ -1,7 +1,7 @@
 """
 Aesthetic Quality Metrics for DreamLayer - Phase 5
 Implements LAION Aesthetic Predictor, Color Harmony Analysis, and Technical Quality Checks.
-Based on HELM's research-grade implementation.
+Custom color/technical heuristics, separate from task success.
 """
 
 import os
@@ -10,11 +10,17 @@ from typing import Dict, Any, Optional, List, Tuple
 from urllib.request import urlretrieve
 import logging
 
-import cv2
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 import numpy as np
-import torch
+try:
+    import torch
+    from transformers import CLIPProcessor, CLIPModel
+except ImportError:
+    torch = CLIPProcessor = CLIPModel = None
 from PIL import Image
-from transformers import CLIPProcessor, CLIPModel
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -45,12 +51,12 @@ def _ensure_aesthetic_model() -> bool:
         return _aesthetic_model is not None
 
     try:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = "cuda" if torch is not None and torch.cuda.is_available() else "cpu"
 
         # Load CLIP model using transformers (consistent with clip_score_metrics.py)
         logger.info(f"Loading CLIP model for aesthetics on {device}")
-        _clip_model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14")
-        _clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
+        _clip_model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14", local_files_only=True)
+        _clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14", local_files_only=True)
         _clip_model.eval()
 
         if device == "cuda":
@@ -63,7 +69,7 @@ def _ensure_aesthetic_model() -> bool:
         if not os.path.exists(model_path):
             model_url = "https://github.com/LAION-AI/aesthetic-predictor/blob/main/sa_0_4_vit_l_14_linear.pth?raw=true"
             logger.info(f"Downloading LAION aesthetic model to {model_path}")
-            urlretrieve(model_url, model_path)
+            raise ImportError('Aesthetic weights unavailable; provision explicitly')
 
         # Load linear model (768 -> 1 for ViT-L/14)
         _aesthetic_model = torch.nn.Linear(768, 1)
@@ -86,13 +92,13 @@ class AestheticMetricsCalculator:
     """Calculate aesthetic quality metrics for images"""
 
     def __init__(self):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = "cuda" if torch is not None and torch.cuda.is_available() else "cpu"
 
     # ==================== LAION AESTHETIC PREDICTOR ====================
 
     def calculate_aesthetic_score(self, image_path: str) -> Optional[float]:
         """
-        Calculate LAION aesthetic score (1-10 scale).
+        Calculate LAION aesthetic score (raw predictor output, unbounded).
         Higher scores indicate more aesthetically pleasing images.
         """
         if not _ensure_aesthetic_model():
@@ -122,8 +128,8 @@ class AestheticMetricsCalculator:
                 # Get aesthetic score
                 aesthetic_score = _aesthetic_model(image_features.float()).item()
 
-            # Clamp to 1-10 range (model can occasionally output outside this range)
-            aesthetic_score = max(1.0, min(10.0, aesthetic_score))
+            # Preserve raw predictor output (model can occasionally output outside this range)
+            aesthetic_score = float(aesthetic_score)  # Preserve unbounded predictor output; no artificial clamp.
 
             logger.debug(f"Aesthetic score for {image_path}: {aesthetic_score:.2f}")
             return aesthetic_score
@@ -145,7 +151,7 @@ class AestheticMetricsCalculator:
             batch_size: Number of images to process at once (default: 16)
 
         Returns:
-            List of aesthetic scores (1-10 scale), None for failed images
+            List of aesthetic scores (raw predictor output, unbounded), None for failed images
         """
         if not _ensure_aesthetic_model():
             logger.warning("Aesthetic model not available")
@@ -204,8 +210,8 @@ class AestheticMetricsCalculator:
 
                 # Store results
                 for idx, score in zip(valid_indices, scores):
-                    # Clamp to 1-10 range
-                    results[idx] = max(1.0, min(10.0, score))
+                    # Preserve raw predictor output
+                    results[idx] = float(score)
 
             logger.info(f"Completed aesthetic scores for {sum(1 for r in results if r is not None)} images")
             return results
@@ -499,7 +505,7 @@ class AestheticMetricsCalculator:
                 "gradient_magnitude": gradient_mean
             }
         except Exception:
-            return {"sharpness_score": 0.5, "laplacian_variance": 0, "gradient_magnitude": 0}
+            return {"sharpness_score": None, "laplacian_variance": None, "gradient_magnitude": None}
 
     def _calculate_noise_level(self, gray: np.ndarray) -> Dict[str, float]:
         """
@@ -540,7 +546,7 @@ class AestheticMetricsCalculator:
                 "estimated_snr": max(1, 255 / (noise_std + 1))  # Signal-to-noise ratio
             }
         except Exception:
-            return {"noise_level": 0.5, "noise_std": 15, "estimated_snr": 10}
+            return {"noise_level": None, "noise_std": None, "estimated_snr": None}
 
     def _detect_artifacts(self, image: np.ndarray, gray: np.ndarray) -> Dict[str, float]:
         """
@@ -601,7 +607,7 @@ class AestheticMetricsCalculator:
                 "color_bleeding_level": bleeding_score
             }
         except Exception:
-            return {"artifact_score": 0.2, "banding_level": 0.1, "blocking_level": 0.1, "color_bleeding_level": 0.1}
+            return {"artifact_score": None, "banding_level": None, "blocking_level": None, "color_bleeding_level": None}
 
     def _calculate_dynamic_range(self, gray: np.ndarray) -> Dict[str, float]:
         """Calculate dynamic range utilization"""
@@ -629,7 +635,7 @@ class AestheticMetricsCalculator:
                 "histogram_entropy": entropy
             }
         except Exception:
-            return {"dynamic_range_score": 0.5, "intensity_range": 128, "histogram_entropy": 5}
+            return {"dynamic_range_score": None, "intensity_range": None, "histogram_entropy": None}
 
     def _empty_technical_metrics(self) -> Dict[str, Any]:
         """Return empty technical quality metrics"""
@@ -669,29 +675,9 @@ class AestheticMetricsCalculator:
         technical_metrics = self.calculate_technical_quality(image_path)
         results.update(technical_metrics)
 
-        # Overall aesthetic quality (combines all aspects)
-        component_scores = []
-        weights = []
-
-        if aesthetic_score is not None:
-            # Normalize aesthetic score from 1-10 to 0-1
-            component_scores.append((aesthetic_score - 1) / 9)
-            weights.append(0.4)
-
-        if color_metrics.get("color_harmony_score") is not None:
-            component_scores.append(color_metrics["color_harmony_score"])
-            weights.append(0.3)
-
-        if technical_metrics.get("technical_quality_score") is not None:
-            component_scores.append(technical_metrics["technical_quality_score"])
-            weights.append(0.3)
-
-        if component_scores and weights:
-            total_weight = sum(weights)
-            overall = sum(s * w for s, w in zip(component_scores, weights)) / total_weight
-            results["overall_aesthetic_quality"] = overall
-        else:
-            results["overall_aesthetic_quality"] = None
+        results["overall_aesthetic_quality"] = None
+        results["metric_version"] = "custom-aesthetic-heuristics-v2"
+        results["limitation"] = "Uncalibrated color/technical heuristics; no overall quality or task-success score"
 
         return results
 
@@ -736,28 +722,8 @@ class AestheticMetricsCalculator:
             technical_metrics = self.calculate_technical_quality(image_path)
             metrics.update(technical_metrics)
 
-            # Calculate overall aesthetic quality
-            component_scores = []
-            weights = []
-
-            if aesthetic_scores[i] is not None:
-                component_scores.append((aesthetic_scores[i] - 1) / 9)
-                weights.append(0.4)
-
-            if color_metrics.get("color_harmony_score") is not None:
-                component_scores.append(color_metrics["color_harmony_score"])
-                weights.append(0.3)
-
-            if technical_metrics.get("technical_quality_score") is not None:
-                component_scores.append(technical_metrics["technical_quality_score"])
-                weights.append(0.3)
-
-            if component_scores and weights:
-                total_weight = sum(weights)
-                overall = sum(s * w for s, w in zip(component_scores, weights)) / total_weight
-                metrics["overall_aesthetic_quality"] = overall
-            else:
-                metrics["overall_aesthetic_quality"] = None
+            metrics["overall_aesthetic_quality"] = None
+            metrics["metric_version"] = "custom-aesthetic-heuristics-v2"
 
             results.append(metrics)
 

@@ -89,11 +89,10 @@ const HiresFixSettings: React.FC<HiresFixSettingsProps> = ({
       ) : (
         <div className="my-6">
           <SizingSettings 
-            showSliders={true} 
-            widthValue={resizeWidth} 
-            heightValue={resizeHeight}
-            onWidthChange={setResizeWidth}
-            onHeightChange={setResizeHeight}
+             
+            width={resizeWidth} 
+            height={resizeHeight}
+            onChange={(w, h) => { setResizeWidth(w); setResizeHeight(h); }}
           />
         </div>
       )}

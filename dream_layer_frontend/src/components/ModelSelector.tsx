@@ -182,7 +182,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelSelect, currentTab
                 <PopupBox isOpen={open} onClose={() => {
                   setOpen(false);
                   handleManualRefresh();
-                }} title="API-Based Model">
+                }} aria-label="API-Based Model">
                     <ApiBasedModelForm></ApiBasedModelForm>
                 </PopupBox>
                 <div className="flex items-center justify-between mb-1">
@@ -193,9 +193,9 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelSelect, currentTab
                         {/* WebSocket Connection Status */}
                         <div className="flex items-center space-x-1">
                             {isWebSocketConnected ? (
-                                <Wifi className="h-3 w-3 text-green-500" title="Auto-refresh enabled" />
+                                <Wifi className="h-3 w-3 text-green-500" aria-label="Auto-refresh enabled" />
                             ) : (
-                                <WifiOff className="h-3 w-3 text-gray-400" title="Auto-refresh disabled" />
+                                <WifiOff className="h-3 w-3 text-gray-400" aria-label="Auto-refresh disabled" />
                             )}
                             <span className="text-xs text-muted-foreground">
                                 {isWebSocketConnected ? 'Auto' : 'Manual'}
@@ -271,10 +271,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelSelect, currentTab
                     <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                     <span>{isLoading ? 'Loading...' : 'Refresh Models'}</span>
                 </Button>
-                {false && <Button variant="outline" className="dark:bg-[#0F172A] dark:border-slate-700 dark:text-white dark:hover:bg-slate-800">
-                    <Save className="h-4 w-4 mr-2" />
-                    Saved Settings
-                </Button>}
+                
             </div>
         </div>
     );

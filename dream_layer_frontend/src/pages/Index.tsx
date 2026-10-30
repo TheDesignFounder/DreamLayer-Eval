@@ -82,6 +82,7 @@ const Index = () => {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <NavBar />
+      <a href="/research" className="mx-auto mt-3 rounded border px-4 py-2">Open research workbench</a>
       <div className="container mx-auto max-w-7xl px-4 py-6">
         <ModelSelector onModelSelect={handleModelSelect} currentTab={activeTab} />
         <h2 className="mb-2 mt-6 text-lg font-medium text-foreground">Generation Modules</h2>

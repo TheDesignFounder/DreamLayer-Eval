@@ -102,7 +102,7 @@ const ExtrasPage = () => {
     }
   };
 
-  const handleGridSettingChange = (key: string, value: any) => {
+  const handleGridSettingChange = (key: string, value: unknown) => {
     setGridSettings(prev => ({
       ...prev,
       [key]: value
@@ -292,10 +292,9 @@ const ExtrasPage = () => {
         ) : (
           <div className="my-6">
             <SizingSettings 
-              widthValue={resizeWidth} 
-              heightValue={resizeHeight}
-              onWidthChange={setResizeWidth}
-              onHeightChange={setResizeHeight}
+              width={resizeWidth} 
+              height={resizeHeight}
+              onChange={(w, h) => { setResizeWidth(w); setResizeHeight(h); }}
             />
           </div>
         )}

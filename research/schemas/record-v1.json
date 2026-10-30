@@ -1,0 +1,413 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dreamlayer:record:1",
+  "title": "DreamLayer exported record v1",
+  "description": "Extensible schema-1 records. Cross-record references, canonical hashes, finite numbers, and semantic constraints are also checked at import.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "id",
+    "kind",
+    "created_at",
+    "experiment_id"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "enum": [
+        "analysis",
+        "annotation",
+        "asset",
+        "assignment",
+        "attempt",
+        "experiment",
+        "historical_ranking",
+        "judge_call",
+        "judge_reconciliation",
+        "legacy",
+        "prompt",
+        "result",
+        "trial"
+      ]
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "experiment_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "experiment"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "config",
+          "config_hash"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "prompt"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "text",
+          "group_id",
+          "split"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "trial"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "prompt_id",
+          "repeat_index",
+          "model"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "attempt"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "trial_id",
+          "status"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "asset"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "sha256",
+          "locator",
+          "original_filename",
+          "media"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "result"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "metric_id",
+          "metric_version",
+          "scope",
+          "status",
+          "score",
+          "membership_hash",
+          "implementation",
+          "weights",
+          "preprocessing_hash",
+          "units",
+          "direction",
+          "elapsed_ms"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "assignment"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "rater_id",
+          "asset_ids",
+          "rubric",
+          "seed",
+          "mode"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "annotation"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "assignment_id",
+          "rater_id",
+          "labels",
+          "rubric_hash"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "analysis"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "config",
+          "output"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "judge_reconciliation"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "request_record_id",
+          "resolution",
+          "note"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "historical_ranking"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "source_sha256",
+          "source_row",
+          "original",
+          "numeric_score",
+          "asset_id"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "result"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "enum": [
+              "abstention",
+              "failed_evaluation",
+              "insufficient_data",
+              "invalid_legacy_result",
+              "not_applicable",
+              "success",
+              "unavailable_dependency"
+            ]
+          },
+          "scope": {
+            "enum": [
+              "image",
+              "video",
+              "criterion",
+              "pair",
+              "dataset"
+            ]
+          },
+          "score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "success"
+                }
+              }
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "properties": {
+                    "score": {
+                      "type": "number"
+                    }
+                  }
+                },
+                {
+                  "required": [
+                    "special_value"
+                  ],
+                  "properties": {
+                    "score": {
+                      "type": "null"
+                    },
+                    "special_value": {
+                      "const": "positive_infinity"
+                    }
+                  }
+                }
+              ]
+            },
+            "else": {
+              "required": [
+                "reason"
+              ],
+              "properties": {
+                "score": {
+                  "type": "null"
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "metric_id": {
+                  "enum": [
+                    "fid",
+                    "fvd"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "scope": {
+                  "const": "dataset"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "asset"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "prompt"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "split": {
+            "enum": [
+              "train",
+              "development",
+              "test",
+              "exploratory"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "annotation"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "labels": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {
+              "enum": [
+                "pass",
+                "fail",
+                "uncertain",
+                "not_applicable",
+                "A",
+                "B",
+                "tie"
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": true
+}

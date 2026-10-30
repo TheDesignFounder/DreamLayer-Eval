@@ -1,5 +1,9 @@
 # Contributing to DreamLayer AI
 
+For the research workbench, follow [research contributor setup](research-contributing.md).
+It specifies Python 3.11/3.12, POSIX execution, offline tests, CI and formatting.
+The older generation-service setup below has a separate dependency environment.
+
 Thank you for your interest in contributing to DreamLayer AI! This guide will help you get started with contributing to the project.
 
 ## 🤝 How to Contribute
@@ -273,7 +277,7 @@ from dream_layer_backend.utils import validate_api_key
 class TestAPIKeyValidation:
     def test_valid_openai_key(self):
         """Test valid OpenAI API key validation."""
-        key = "sk-1234567890abcdef1234567890abcdef1234567890abcdef"
+        key = "sk-" + "0" * 48  # Deliberately synthetic format fixture; never a credential.
         assert validate_api_key(key, "openai") is True
     
     def test_invalid_openai_key(self):

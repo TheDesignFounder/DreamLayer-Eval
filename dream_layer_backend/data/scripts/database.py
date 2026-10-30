@@ -18,21 +18,17 @@ class DreamLayerDB:
     """Main database interface for DreamLayer"""
     
     def __init__(self, db_path: str = None):
-        if db_path is None:
-            # Use dynamic project root discovery for consistency
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            project_root = current_dir
-            
-            # Navigate up to find DreamLayer root (contains Dream_Layer_Resources)
-            while project_root != os.path.dirname(project_root):  # Not at filesystem root
-                if os.path.exists(os.path.join(project_root, 'Dream_Layer_Resources')):
-                    break
-                project_root = os.path.dirname(project_root)
-            
-            db_path = os.path.join(project_root, 'dream_layer_backend', 'data', 'dreamlayer.db')
-        
-        self.db_path = os.path.abspath(db_path)
-        self.ensure_database_exists()
+        from pathlib import Path
+        import sys
+        project_root = Path(__file__).resolve().parents[3]
+        if str(project_root) not in sys.path:
+            sys.path.insert(0, str(project_root))
+        self.db_path = str(Path(db_path or os.getenv('TEST_DB_PATH') or os.getenv('DREAMLAYER_DB_PATH') or project_root / 'dream_layer_backend/data/dreamlayer.db').resolve())
+        Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
+        from research.store import Store
+        Store(self.db_path)
+        self.create_schema()
+        self.ensure_all_tables_exist()
     
     def get_connection(self) -> sqlite3.Connection:
         """Get database connection with foreign key support"""
@@ -338,7 +334,7 @@ class DreamLayerDB:
                     SELECT r.* FROM runs r
                     LEFT JOIN video_metrics vm ON r.run_id = vm.run_id
                     WHERE r.generation_type IN ('txt2vid', 'img2vid')
-                    AND vm.run_id IS NULL
+                    AND (vm.run_id IS NULL OR vm.metadata IS NULL OR vm.metadata NOT LIKE '%custom-video-v2%')
                     ORDER BY r.timestamp DESC
                 """)
                 return [dict(row) for row in cursor.fetchall()]
@@ -488,7 +484,10 @@ class DreamLayerDB:
     
     def upsert_metric(self, run_id: str, timestamp: str, clip_score_mean: float = None, 
                      fid_score: float = None, metadata: Dict = None) -> bool:
-        """Insert or update metrics for a run"""
+        """Legacy storage only; new versioned results use research_records."""
+        import math
+        if any(v is not None and not math.isfinite(v) for v in (clip_score_mean, fid_score)):
+            raise ValueError('Metric values must be finite or null')
         try:
             with self.get_connection() as conn:
                 # Check if record exists
@@ -578,7 +577,7 @@ class DreamLayerDB:
                 if row:
                     return {
                         'clip_score_mean': row['clip_score_mean'],
-                        'fid_score': row['fid_score']
+                        'fid_score': None, 'legacy_fid_score': row['fid_score'], 'fid_status': 'invalid_legacy_result' if row['fid_score'] is not None else 'not_applicable'
                     }
                 return {'clip_score_mean': None, 'fid_score': None}
                 
@@ -627,7 +626,7 @@ class DreamLayerDB:
                     # Create metrics dictionary
                     run_data['metrics'] = {
                         'clip_score_mean': run_data.pop('clip_score_mean', None),
-                        'fid_score': run_data.pop('fid_score', None)
+                        'fid_score': None, 'legacy_fid_score': run_data.pop('fid_score', None), 'fid_status': 'invalid_legacy_result'
                     }
                     
                     results.append(run_data)
@@ -642,6 +641,9 @@ class DreamLayerDB:
                                  image_path: str, metrics: Dict[str, Any]) -> bool:
         """Insert or update composition metrics for a run"""
         try:
+            if 'object_criteria_result' in metrics:
+                from research.legacy import save_composition
+                return save_composition(self.db_path, run_id, prompt_text, image_path, metrics)
             with self.get_connection() as conn:
                 # Check if record exists
                 cursor = conn.execute("SELECT run_id FROM composition_metrics WHERE run_id = ?", (run_id,))
@@ -664,9 +666,9 @@ class DreamLayerDB:
                     """, (
                         prompt_text,
                         image_path,
-                        metrics.get('macro_precision', 0.0),
-                        metrics.get('macro_recall', 0.0),
-                        metrics.get('macro_f1', 0.0),
+                        metrics.get('macro_precision'),
+                        metrics.get('macro_recall'),
+                        metrics.get('macro_f1'),
                         json.dumps(metrics.get('per_class_metrics', {})),
                         json.dumps(metrics.get('detected_objects', {})),
                         json.dumps(metrics.get('missing_objects', {})),
@@ -684,9 +686,9 @@ class DreamLayerDB:
                         run_id,
                         prompt_text,
                         image_path,
-                        metrics.get('macro_precision', 0.0),
-                        metrics.get('macro_recall', 0.0),
-                        metrics.get('macro_f1', 0.0),
+                        metrics.get('macro_precision'),
+                        metrics.get('macro_recall'),
+                        metrics.get('macro_f1'),
                         json.dumps(metrics.get('per_class_metrics', {})),
                         json.dumps(metrics.get('detected_objects', {})),
                         json.dumps(metrics.get('missing_objects', {})),
@@ -704,6 +706,10 @@ class DreamLayerDB:
         """Get composition metrics for a run"""
         try:
             with self.get_connection() as conn:
+                from research.legacy import composition
+                corrected = composition(conn, run_id)
+                if corrected is not None:
+                    return corrected
                 cursor = conn.execute("""
                     SELECT * FROM composition_metrics WHERE run_id = ?
                 """, (run_id,))

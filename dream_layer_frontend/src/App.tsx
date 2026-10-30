@@ -4,8 +4,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { lazy, Suspense } from "react";
+const Index = lazy(() => import("./pages/Index"));
 import NotFound from "./pages/NotFound";
+import Research from "./pages/Research";
+import ResearchReview from "./pages/ResearchReview";
 
 const queryClient = new QueryClient();
 
@@ -16,7 +19,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Suspense fallback={<p>Loading generator…</p>}><Index /></Suspense>} />
+          <Route path="/research" element={<Research />} />
+          <Route path="/research/review" element={<ResearchReview />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

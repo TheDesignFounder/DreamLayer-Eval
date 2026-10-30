@@ -1,3 +1,4 @@
+import type { GeneratedImage, GeneratedGrid, CustomWorkflow } from '@/types/api';
 import React, { useState, useEffect } from 'react';
 import ImageUploader from '@/components/ImageUploader';
 import AdvancedSettings from '@/components/AdvancedSettings';
@@ -176,7 +177,7 @@ const Img2ImgPage: React.FC<Img2ImgPageProps> = ({ selectedModel, onTabChange })
         
         testImage.onload = () => {
           console.log('Test image loaded successfully:', firstImageUrl);
-          const images = data.generated_images.map((img: any) => ({
+          const images = data.generated_images.map((img: GeneratedImage) => ({
             id: `${Date.now()}-${Math.random()}`,
             url: img.url,
             prompt: requestData.prompt,
@@ -416,9 +417,7 @@ const Img2ImgPage: React.FC<Img2ImgPageProps> = ({ selectedModel, onTabChange })
               >
                 {isGenerating ? 'Interrupt' : 'Generate Image'}
               </Button>
-              {false && <button className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground">
-                Save Settings
-              </button>}
+              
             </div>
           </div>
           

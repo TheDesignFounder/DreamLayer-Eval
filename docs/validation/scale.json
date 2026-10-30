@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "trials": 2000,
+  "judges_per_trial": 2,
+  "judge_mode": "pointwise",
+  "judge_requests": 4000,
+  "resume_added_records": 0,
+  "assignment_count": 2000,
+  "durations": {
+    "create_seconds": 1.9994024629995693,
+    "first_run_seconds": 66.8719929459985,
+    "resume_seconds": 11.409815860999515,
+    "assign_seconds": 5.843614361998334,
+    "assignment_resume_seconds": 0.07699519000016153
+  },
+  "database_bytes": 61128704,
+  "query_plan": [
+    {
+      "id": 4,
+      "parent": 0,
+      "notused": 61,
+      "detail": "SEARCH research_records USING INDEX research_by_protocol_key (experiment_id=? AND kind=? AND <expr>=?)"
+    }
+  ],
+  "python": "3.11.13",
+  "system": "Darwin",
+  "machine": "x86_64",
+  "provider_calls": 0,
+  "limitations": "Synthetic judges, one shared tiny image, local SQLite, serial execution. Not inference throughput, human annotation throughput, or pairwise planning scale."
+}

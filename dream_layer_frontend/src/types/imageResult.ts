@@ -5,5 +5,5 @@ export interface ImageResult {
   prompt: string;
   negativePrompt?: string;
   timestamp: number;
-  settings?: Record<string, any>;
+  settings?: Partial<import('./generationSettings').CoreGenerationSettings>;
 }

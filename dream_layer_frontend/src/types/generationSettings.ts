@@ -117,7 +117,7 @@ export interface GenerationResponse {
       url: string;
     }>;
   };
-  workflow?: any;
+  workflow?: unknown;
   error?: string;
 }
 
@@ -132,14 +132,12 @@ export interface ImageResult {
 }
 
 // Type for txt2img specific settings
-export interface Txt2ImgCoreSettings extends CoreGenerationSettings {
-  // Any additional txt2img specific settings can be added here
-}
+export type Txt2ImgCoreSettings = CoreGenerationSettings;
 
 // Default values for txt2img settings
 export const defaultTxt2ImgSettings: Txt2ImgCoreSettings = {
   ...defaultCoreSettings,
-  // Override any default values specific to txt2img here
+  // Override unknown default values specific to txt2img here
 };
 
 // Type for txt2vid specific settings

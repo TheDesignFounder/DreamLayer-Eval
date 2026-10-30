@@ -1,0 +1,36 @@
+{
+  "provider": "openai",
+  "model": "gpt-5.4-mini-2026-03-17",
+  "protocol": "sparse",
+  "sparse_frames": 4,
+  "max_side": 768,
+  "max_output_tokens": 512,
+  "timeout": 45,
+  "budget": {
+    "calls": 1,
+    "frames": 2,
+    "tokens": 32768
+  },
+  "rubric": {
+    "version": "1",
+    "criteria": [
+      {
+        "id": "task",
+        "description": "Does the complete visible evidence fulfill the prompt? Action, text and spatial details require inspection. Abstain if unclear."
+      }
+    ]
+  },
+  "mode": "pointwise",
+  "retry": {
+    "max_retries": 0
+  },
+  "pricing": {
+    "input_per_million": 0.75,
+    "output_per_million": 4.5,
+    "cached_input_per_million": 0.075,
+    "source": "https://developers.openai.com/api/docs/models/gpt-5.4-mini",
+    "currency": "USD",
+    "as_of": "2026-10-30",
+    "version": "official-model-page-20261030"
+  }
+}

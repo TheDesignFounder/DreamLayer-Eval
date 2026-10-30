@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { RunConfig, RunRegistryState, RunRegistryActions } from '@/types/runRegistry';
 import { io, Socket } from 'socket.io-client';
 
-interface RunRegistryStore extends RunRegistryState, RunRegistryActions {}
+type RunRegistryStore = RunRegistryState & RunRegistryActions;
 
 const API_BASE_URL = 'http://localhost:5005/api';
 let socket: Socket | null = null;
@@ -47,17 +47,17 @@ export const useRunRegistryStore = create<RunRegistryStore>((set, get) => ({
       }
       
       if (data.status === 'success' && data.runs) {
-        const normalizedRuns = data.runs.map((run: any) => ({ 
+        const normalizedRuns = data.runs.map((run: RunConfig) => ({ 
           ...run, 
           loras: run.loras || [], 
           controlnets: run.controlnets || [],
           // Ensure metrics are included (may be null for runs without them)
-          clip_score_mean: run.clip_score_mean || null,
+          clip_score_mean: run.clip_score_mean ?? null,
           fid_score: run.fid_score || null,
           // Composition metrics
           macro_precision: run.macro_precision || null,
           macro_recall: run.macro_recall || null,
-          macro_f1: run.macro_f1 || null
+          macro_f1: run.macro_f1 ?? null
         }));
         set({ runs: normalizedRuns, loading: false });
         
@@ -140,7 +140,7 @@ export const useRunRegistryStore = create<RunRegistryStore>((set, get) => ({
           ...data.run,
           loras: data.run.loras || [],
           controlnets: data.run.controlnets || [],
-          clip_score_mean: data.run.clip_score_mean || null,
+          clip_score_mean: data.run.clip_score_mean ?? null,
           fid_score: data.run.fid_score || null
         };
         set({ selectedRun: normalizedRun, loading: false });

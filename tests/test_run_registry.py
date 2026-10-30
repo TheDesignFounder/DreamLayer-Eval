@@ -17,7 +17,7 @@ class TestRunRegistry:
         from run_registry import app
         assert app is not None
     
-    @patch('dream_layer_backend_utils.unified_database_queries.get_all_runs_with_clipscore')
+    @patch('dream_layer_backend_utils.unified_database_queries.get_all_runs_with_metrics')
     def test_enhanced_runs_endpoint(self, mock_get_runs):
         """Test /api/runs/enhanced/v2 endpoint"""
         from run_registry import app
@@ -79,7 +79,7 @@ class TestRunRegistry:
             # Should have CORS headers
             assert response.status_code == 200
     
-    @patch('dream_layer_backend_utils.unified_database_queries.get_all_runs_with_clipscore')
+    @patch('dream_layer_backend_utils.unified_database_queries.get_all_runs_with_metrics')
     def test_empty_database_response(self, mock_get_runs):
         """Test response when database is empty"""
         from run_registry import app
@@ -96,7 +96,7 @@ class TestRunRegistry:
             assert data['runs'] == []
             assert data['count'] == 0
     
-    @patch('dream_layer_backend_utils.unified_database_queries.get_all_runs_with_clipscore')
+    @patch('dream_layer_backend_utils.unified_database_queries.get_all_runs_with_metrics')
     def test_database_error_handling(self, mock_get_runs):
         """Test error handling when database fails"""
         from run_registry import app

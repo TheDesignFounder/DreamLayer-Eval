@@ -67,11 +67,7 @@ const ImageUploader = ({ activeImg2ImgTool = "img2img" }: ImageUploaderProps) =>
     <div className="mb-4">
       <div className="flex items-center justify-between mb-2">
         <h4 className="text-sm font-bold text-primary">0. Upload Image</h4>
-        {false && shouldShowButton() && (
-          <button className="text-xs rounded-md border border-input bg-background px-2 py-1 text-foreground hover:bg-accent hover:text-accent-foreground">
-            {getButtonLabel()}
-          </button>
-        )}
+        
       </div>
       {activeImg2ImgTool === "inpaint-upload" ? (
         <DualImageUploader

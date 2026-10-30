@@ -1,3 +1,4 @@
+import type { GeneratedImage, GeneratedGrid, CustomWorkflow } from '@/types/api';
 import React, { useState, useEffect } from 'react';
 import Accordion from '@/components/Accordion';
 import PromptInput from '@/components/PromptInput';
@@ -35,12 +36,12 @@ const Txt2ImgPage: React.FC<Txt2ImgPageProps> = ({ selectedModel, onTabChange })
     ...defaultTxt2ImgSettings,
     model_name: selectedModel
   });
-  const [customWorkflow, setCustomWorkflow] = useState<any | null>(null);
+  const [customWorkflow, setCustomWorkflow] = useState<CustomWorkflow | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [batchPrompts, setBatchPrompts] = useState<string[]>([]);
   const [progress, setProgress] = useState({ current: 0, total: 0, currentPrompt: '' });
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [grids, setGrids] = useState<any[]>([]);
+  const [grids, setGrids] = useState<GeneratedGrid[]>([]);
   const [isCreatingGrid, setIsCreatingGrid] = useState(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -234,7 +235,7 @@ const Txt2ImgPage: React.FC<Txt2ImgPageProps> = ({ selectedModel, onTabChange })
       console.log('Response data:', data);
 
       if (data.generated_images) {
-        const images = data.generated_images.map((img: any) => {
+        const images = data.generated_images.map((img: GeneratedImage) => {
           // Use the URL directly from the response
           const imageUrl = img.url;
           
@@ -342,7 +343,7 @@ const Txt2ImgPage: React.FC<Txt2ImgPageProps> = ({ selectedModel, onTabChange })
       
       // Remove the batch completion image adding since images are now added in real-time
       // if (data.all_images?.length > 0) {
-      //   const images = data.all_images.map((img: any) => ({
+      //   const images = data.all_images.map((img: GeneratedImage) => ({
       //     id: `${Date.now()}-${Math.random()}`,
       //     url: img.url,
       //     prompt: img.prompt || "Batch generated",
@@ -447,9 +448,7 @@ const Txt2ImgPage: React.FC<Txt2ImgPageProps> = ({ selectedModel, onTabChange })
       >
         {isCreatingGrid ? 'Creating Grids...' : 'Create Grid'}
       </Button>
-      {false && <button className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground">
-        Save Settings
-      </button>}
+      
     </div>
   );
 

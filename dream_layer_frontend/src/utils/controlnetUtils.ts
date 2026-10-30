@@ -75,9 +75,9 @@ export async function prepareControlNetForAPI(controlNetConfig: ControlNetReques
     const preparedUnit: ControlNetUnitForAPI = { ...unit };
 
     // Convert File object to base64 if present
-    if (unit.input_image instanceof File) {
+    if ((unit.input_image as unknown) instanceof File) {
       try {
-        preparedUnit.input_image = await fileToBase64(unit.input_image);
+        preparedUnit.input_image = await fileToBase64(unit.input_image as unknown as File);
       } catch (error) {
         console.error('Error converting ControlNet image to base64:', error);
         // Skip this unit if image conversion fails

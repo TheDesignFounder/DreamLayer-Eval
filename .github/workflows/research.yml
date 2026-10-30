@@ -1,0 +1,98 @@
+name: Research workbench
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python ${{ matrix.python }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            requirements-research-legacy.lock.txt
+            requirements-research-dev.txt
+      - run: python -m pip install -r requirements-research-legacy.lock.txt -r requirements-research-dev.txt
+      - run: python scripts/research_test_hygiene.py python .research/ci-suite
+      - run: python -m ruff check research tests/research scripts/research_*.py
+      - run: python -m ruff format --check research tests/research scripts/research_*.py
+      - run: python scripts/research_public_api_check.py
+      - run: python scripts/research_public_hygiene.py
+      - run: python scripts/research_ambiguity_check.py --directory .research/ci-ambiguity
+      - run: python -m build --wheel --sdist
+      - name: Install and replay the wheel outside source imports
+        run: |
+          python -m venv .research/ci-wheel
+          .research/ci-wheel/bin/python -m pip install dist/dreamlayer_research-1.1.0-py3-none-any.whl
+          .research/ci-wheel/bin/python -I scripts/research_wheel_check.py --directory .research/ci-wheel-replay
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: python-${{ matrix.os }}-${{ matrix.python }}
+          path: |
+            .research/ci-suite/
+            .research/ci-ambiguity/result.json
+            .research/ci-wheel-replay/result.json
+          retention-days: 14
+  windows-contract:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Assert Windows is explicitly unsupported
+        run: python scripts/research_platform_check.py --expect-unsupported
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RESEARCH_API_URL: http://127.0.0.1:5057
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:8082
+      DLE_VALIDATION_DIR: ${{ github.workspace }}/.research/ci-browser
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: dream_layer_frontend/package-lock.json
+      - run: python -m pip install -r requirements-research.lock.txt
+      - run: npm ci
+        working-directory: dream_layer_frontend
+      - run: npm run typecheck && npm run lint && npm run build
+        working-directory: dream_layer_frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: dream_layer_frontend
+      - name: Run real browser suite with isolated servers
+        run: python scripts/research_browser_check.py
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: browser-validation
+          path: .research/ci-browser*
+          retention-days: 14

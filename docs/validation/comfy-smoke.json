@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "execution": "Real local ComfyUI CPU queue, history, image retrieval and parameter binding",
+  "generation_kind": "Procedural EmptyImage \u2192 SaveImage; no diffusion or text-to-image model",
+  "workflow_sha256": "44d7f51a37e013329ebf2b84f50cebf8b16de8e9ff78818004753532dee34a92",
+  "comfyui_version": "0.3.40",
+  "job_count": 1,
+  "asset_sha256": "5b1c9910773cebda419b9bbe71ac77653c8c427d65184f40edcc66811bf5064b",
+  "dimensions": [
+    64,
+    48
+  ],
+  "rgb": [
+    51,
+    102,
+    153
+  ],
+  "luminance": 0.4,
+  "resume_added_records": 0,
+  "fresh_replay_exact": true,
+  "paid_provider_calls": 0,
+  "limitations": "Does not verify checkpoint loading, diffusion inference, provider nodes, text fidelity or production throughput. Optional audio/upscale nodes were unavailable."
+}

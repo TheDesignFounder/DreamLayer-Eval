@@ -6,13 +6,13 @@ export interface RunConfig {
   loras: Array<{
     name: string;
     strength: number;
-    [key: string]: any;
+    [key: string]: unknown;
   }>;
   controlnets: Array<{
     model: string;
     strength: number;
     enabled: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
   }>;
   prompt: string;
   negative_prompt: string;
@@ -24,13 +24,15 @@ export interface RunConfig {
   height: number;
   batch_size: number;
   batch_count: number;
-  workflow: Record<string, any>;
+  workflow: Record<string, unknown>;
   version: string;
   generated_images: string[];
   generation_type: 'txt2img' | 'img2img';
   // Enhanced with metrics from database integration
-  clip_score_mean?: number;
-  fid_score?: number;
+  clip_score_mean?: number | null;
+  fid_score?: number | null;
+  legacy_fid_score?: number | null;
+  fid_status?: 'invalid_legacy_result' | 'not_applicable';
   // Composition correctness metrics
   macro_precision?: number;
   macro_recall?: number;
@@ -50,9 +52,9 @@ export interface RunRegistryState {
   error: string | null;
   selectedRun: RunConfig | null;
   metricsProgress: {
-    clip: { status: 'idle' | 'starting' | 'completed', stats?: any };
-    fid: { status: 'idle' | 'starting' | 'completed', stats?: any };
-    composition: { status: 'idle' | 'starting' | 'completed', stats?: any };
+    clip: { status: 'idle' | 'starting' | 'completed', stats?: unknown };
+    fid: { status: 'idle' | 'starting' | 'completed', stats?: unknown };
+    composition: { status: 'idle' | 'starting' | 'completed', stats?: unknown };
   };
   pendingMetrics: {
     clip: number;

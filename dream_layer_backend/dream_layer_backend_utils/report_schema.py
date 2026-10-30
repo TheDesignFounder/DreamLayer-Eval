@@ -4,10 +4,12 @@ Separates configuration data from metrics data for better scalability.
 """
 
 import json
+import math
+import hashlib
 import csv
 import os
 from typing import Dict, List, Any, Optional
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime
 
 
@@ -16,15 +18,20 @@ class RunMetrics:
     """Flat metrics data for CSV storage."""
     run_id: str
     # ClipScore metrics
-    clip_score_mean: float = 0.0
-    clip_score_median: float = 0.0
-    clip_score_std: float = 0.0
-    clip_score_max: float = 0.0
-    clip_score_min: float = 0.0
+    clip_score_mean: Optional[float] = None
+    clip_score_median: Optional[float] = None
+    clip_score_std: Optional[float] = None
+    clip_score_max: Optional[float] = None
+    clip_score_min: Optional[float] = None
+    schema_version: str = "2"
+    metric_id: str = "clip_cosine"
+    metric_version: str = "legacy-unverified"
+    status: str = "not_evaluated"
+    reason: str = "No successful evaluation recorded"
     # Future metrics can be added here
-    # aesthetic_score: float = 0.0
-    # fid_score: float = 0.0
-    # lpips_score: float = 0.0
+    # aesthetic_score: Optional[float] = None
+    # fid_score: Optional[float] = None
+    # lpips_score: Optional[float] = None
 
 
 @dataclass
@@ -109,11 +116,11 @@ class ReportDataManager:
             for row in reader:
                 # Convert string values to appropriate types
                 for key, value in row.items():
-                    if key != 'run_id':  # run_id stays as string
+                    if key.startswith('clip_score_'):
                         try:
-                            row[key] = float(value)
+                            row[key] = float(value) if value and math.isfinite(float(value)) else None
                         except (ValueError, TypeError):
-                            row[key] = 0.0
+                            row[key] = None
                 
                 metrics.append(RunMetrics(**row))
         
@@ -163,7 +170,7 @@ class ReportDataManager:
                 workflow={
                     "loras": run_data.get("loras", []),
                     "controlnets": run_data.get("controlnets", []),
-                    "workflow_hash": str(hash(json.dumps(run_data.get("workflow", {}), sort_keys=True)))
+                    "workflow_hash": hashlib.sha256(json.dumps(run_data.get('workflow', {}), sort_keys=True).encode()).hexdigest()
                 }
             )
             configs.append(config)
@@ -209,6 +216,8 @@ class ReportDataManager:
                 try:
                     clip_metrics = clip_calculator.compute_metrics_for_batch(prompt, images)
                     metrics.clip_score_mean = clip_metrics["clip_score_mean"]
+                    metrics.status = "success" if metrics.clip_score_mean is not None else "unavailable_dependency"
+                    metrics.reason = "" if metrics.status == "success" else "CLIP model or image unavailable"
                     metrics.clip_score_median = clip_metrics["clip_score_median"]
                     metrics.clip_score_std = clip_metrics["clip_score_std"]
                     metrics.clip_score_max = clip_metrics["clip_score_max"]

@@ -1,3 +1,4 @@
+import type { HistoryImage } from '@/types/api';
 import { create } from 'zustand';
 import { ImageResult } from '@/types/imageResult';
 
@@ -36,7 +37,7 @@ export const useTxt2ImgGalleryStore = create<Txt2ImgGalleryState>((set) => ({
 
       if (data.status === 'success' && data.generations) {
         // Convert database format to ImageResult format
-        const images: ImageResult[] = data.generations.map((gen: any) => ({
+        const images: ImageResult[] = data.generations.map((gen: HistoryImage) => ({
           id: gen.id,
           url: gen.url,
           prompt: gen.prompt || '',

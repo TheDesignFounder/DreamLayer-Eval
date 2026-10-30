@@ -1,3 +1,6 @@
+import sys as _research_sys
+from pathlib import Path as _ResearchPath
+_research_sys.path.insert(0, str(_ResearchPath(__file__).resolve().parent.parent))
 """
 History API Server
 Provides REST API endpoints for generation history management

@@ -44,11 +44,11 @@ COMFY_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ComfyUI's input directory should be inside the ComfyUI directory
 COMFY_UI_DIR = os.path.join(COMFY_ROOT, "ComfyUI")
-COMFY_INPUT_DIR = os.path.join(COMFY_UI_DIR, "input")
+COMFY_INPUT_DIR = os.getenv("DREAMLAYER_INPUT_DIR", os.path.join(COMFY_UI_DIR, "input"))
 COMFY_OUTPUT_DIR = os.path.join(COMFY_UI_DIR, "output")
 
 # Create a directory to store our served images
-SERVED_IMAGES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "served_images")
+SERVED_IMAGES_DIR = os.getenv("DREAMLAYER_SERVED_IMAGES_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "served_images"))
 os.makedirs(SERVED_IMAGES_DIR, exist_ok=True)
 
 logger.info(f"ComfyUI root directory: {COMFY_ROOT}")

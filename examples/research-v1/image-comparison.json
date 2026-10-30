@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "name": "Image evaluator comparison template v1",
+  "purpose": "Exercise infrastructure with synthetic fixtures",
+  "models": [
+    "fixture-black",
+    "fixture-white"
+  ],
+  "repetitions": 1,
+  "concurrency": 2,
+  "prompts": [
+    {
+      "id": "image",
+      "text": "Two circles on a plain background",
+      "group_id": "shape",
+      "split": "development"
+    }
+  ],
+  "assets": [
+    {
+      "path": "tests/fixtures/research/zero caf\u00e9.png",
+      "prompt_id": "image",
+      "model": "fixture-black"
+    },
+    {
+      "path": "tests/fixtures/research/same name/zero caf\u00e9.png",
+      "prompt_id": "image",
+      "model": "fixture-white"
+    }
+  ],
+  "metrics": [
+    {
+      "id": "pixel_luminance"
+    },
+    {
+      "id": "object_criteria",
+      "weights": "/PROVISION/local-yolo.pt"
+    },
+    {
+      "id": "vqascore",
+      "model": "clip-flant5-xl",
+      "weights_ready": false
+    }
+  ],
+  "judges": []
+}

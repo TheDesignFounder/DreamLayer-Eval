@@ -1,14 +1,19 @@
+from __future__ import annotations
 """
 ClipScore metrics implementation for DreamLayer.
 Reuses ComfyUI's existing dependencies (transformers, torch, PIL).
-Based on HELM's research-grade implementation.
+Returns cosine similarity in [-1,1], not the published scaled CLIPScore.
 """
 
 import os
 import statistics
 from typing import List, Dict, Any, Optional
-import torch
-from transformers import CLIPProcessor, CLIPModel
+try:
+    import torch
+    from transformers import CLIPProcessor, CLIPModel
+except ImportError:
+    torch = None
+    CLIPProcessor = CLIPModel = None
 from PIL import Image
 import logging
 
@@ -62,8 +67,8 @@ class ClipScoreCalculator:
             
         try:
             logger.info(f"Loading CLIP model: {self.model_name}")
-            self.model = CLIPModel.from_pretrained(self.model_name)
-            self.processor = CLIPProcessor.from_pretrained(self.model_name)
+            self.model = CLIPModel.from_pretrained(self.model_name, local_files_only=True)
+            self.processor = CLIPProcessor.from_pretrained(self.model_name, local_files_only=True)
             self.model.eval()
             
             # Move to GPU if available (following ComfyUI's pattern)
@@ -83,18 +88,20 @@ class ClipScoreCalculator:
     
     def compute_clip_score(self, prompt: str, image_path: str) -> float:
         """Compute ClipScore for a single image-text pair."""
+        if not prompt.strip():
+            return None
         self._load_model()
         
         if self.model is None or self.processor is None:
             logger.warning("CLIP model not available, returning 0.0")
-            return 0.0
+            return None
         
         try:
             # Find the actual image path
             actual_image_path = self._find_image_path(image_path)
             if actual_image_path is None:
                 logger.warning(f"Image not found: {image_path}")
-                return 0.0
+                return None
             
             # Load and preprocess image
             image = Image.open(actual_image_path).convert('RGB')
@@ -131,7 +138,7 @@ class ClipScoreCalculator:
             
         except Exception as e:
             logger.error(f"Error computing ClipScore for {image_path}: {e}")
-            return 0.0
+            return None
     
     def compute_metrics_for_batch(self, prompt: str, image_paths: List[str]) -> Dict[str, float]:
         """
@@ -145,7 +152,7 @@ class ClipScoreCalculator:
         for image_path in image_paths:
             if image_path:  # Skip empty paths
                 score = self.compute_clip_score(prompt, image_path)
-                if score != 0.0:  # Only include valid scores
+                if score is not None:  # Only include valid scores
                     scores.append(score)
                     logger.debug(f"Valid score: {score:.4f} for {image_path}")
                 else:
@@ -155,11 +162,11 @@ class ClipScoreCalculator:
         if not scores:
             logger.warning("No valid ClipScores computed - all scores were 0.0")
             return {
-                'clip_score_mean': 0.0,
-                'clip_score_median': 0.0,
-                'clip_score_std': 0.0,
-                'clip_score_max': 0.0,
-                'clip_score_min': 0.0
+                'clip_score_mean': None,
+                'clip_score_median': None,
+                'clip_score_std': None,
+                'clip_score_max': None,
+                'clip_score_min': None
             }
         
         metrics = {
@@ -206,7 +213,7 @@ class ClipScoreCalculator:
                     logger.warning(f"Failed to load image {image_path}: {e}")
 
         # Initialize scores array with zeros
-        all_scores = [0.0] * len(image_paths)
+        all_scores = [None] * len(image_paths)
 
         if not valid_images:
             logger.warning("No valid images found in batch")
@@ -245,7 +252,7 @@ class ClipScoreCalculator:
 
             except Exception as e:
                 logger.error(f"Error processing batch {batch_start}-{batch_end}: {e}")
-                scores.extend([0.0] * len(batch_images))
+                scores.extend([None] * len(batch_images))
 
         # Map scores back to original indices
         for score, orig_idx in zip(scores, valid_indices):
@@ -318,7 +325,7 @@ class ClipScoreCalculator:
             return score
         except Exception as e:
             logger.error(f"Error computing score from embeddings: {e}")
-            return 0.0
+            return None
 
 
 # Global instance for reuse across report generation

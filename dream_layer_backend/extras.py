@@ -32,10 +32,10 @@ COMFY_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ComfyUI's input directory should be inside the ComfyUI directory
 COMFY_UI_DIR = os.path.join(COMFY_ROOT, "ComfyUI")
-COMFY_INPUT_DIR = os.path.join(COMFY_UI_DIR, "input")
+COMFY_INPUT_DIR = os.getenv("DREAMLAYER_INPUT_DIR", os.path.join(COMFY_UI_DIR, "input"))
 
 # Create a directory to store our served images
-SERVED_IMAGES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "served_images")
+SERVED_IMAGES_DIR = os.getenv("DREAMLAYER_SERVED_IMAGES_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "served_images"))
 os.makedirs(SERVED_IMAGES_DIR, exist_ok=True)
 
 # Server URL for image serving
@@ -43,8 +43,7 @@ SERVER_URL = "http://localhost:5002/api"
 
 def verify_input_directory():
     """Verify that the input directory exists and is writable"""
-    if not os.path.exists(COMFY_INPUT_DIR):
-        raise RuntimeError(f"Input directory does not exist: {COMFY_INPUT_DIR}")
+    os.makedirs(COMFY_INPUT_DIR, exist_ok=True)
     if not os.access(COMFY_INPUT_DIR, os.W_OK):
         raise RuntimeError(f"Input directory is not writable: {COMFY_INPUT_DIR}")
     print(f"Verified input directory: {COMFY_INPUT_DIR}")

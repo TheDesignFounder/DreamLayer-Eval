@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { ReportBundleState, ReportBundleActions } from '@/types/reportBundle';
 
-interface ReportBundleStore extends ReportBundleState, ReportBundleActions {}
+type ReportBundleStore = ReportBundleState & ReportBundleActions;
 
 const API_BASE_URL = 'http://localhost:5006/api';
 

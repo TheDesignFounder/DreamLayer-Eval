@@ -1,0 +1,448 @@
+{
+  "executed_at": "2026-10-30T07:42:02.531000+00:00",
+  "verified_at": "2026-10-30T07:44:52.673244+00:00",
+  "status": "passed",
+  "experiment_id": "1ec81871-9c33-4724-9831-95391a5953b0",
+  "authorized_total_usd": 5,
+  "actual_http_calls": 12,
+  "reserved_upper_usd": 0.402432,
+  "estimated_total_usd": 0.0091495,
+  "billing_confirmed": false,
+  "providers": {
+    "openai": {
+      "configured_model": "gpt-5.4-mini-2026-03-17",
+      "returned_models": [
+        "gpt-5.4-mini-2026-03-17"
+      ],
+      "successful_calls": 6,
+      "pointwise": 4,
+      "pairwise": 2,
+      "matching_candidate_in_slot_a": 1,
+      "other_candidate_in_slot_a": 1,
+      "input_tokens": 2018,
+      "output_tokens": 340,
+      "estimated_cost_usd": 0.0030435
+    },
+    "anthropic": {
+      "configured_model": "claude-haiku-4-5-20251001",
+      "returned_models": [
+        "claude-haiku-4-5-20251001"
+      ],
+      "successful_calls": 6,
+      "pointwise": 4,
+      "pairwise": 2,
+      "matching_candidate_in_slot_a": 1,
+      "other_candidate_in_slot_a": 1,
+      "input_tokens": 3456,
+      "output_tokens": 530,
+      "estimated_cost_usd": 0.006106
+    }
+  },
+  "pricing": {
+    "openai": {
+      "input_per_million": 0.75,
+      "output_per_million": 4.5,
+      "cached_input_per_million": 0.075,
+      "source": "https://developers.openai.com/api/docs/models/gpt-5.4-mini"
+    },
+    "anthropic": {
+      "input_per_million": 1,
+      "output_per_million": 5,
+      "cached_input_per_million": 0.1,
+      "cache_write_per_million": 1.25,
+      "source": "https://platform.claude.com/docs/en/models/haiku-4-5/overview"
+    }
+  },
+  "structured_results_parsed": 12,
+  "fixture_expectations_matched": 12,
+  "resume_added_calls": 0,
+  "fresh_replay_exact": true,
+  "independent_replay_with_network_blocked": true,
+  "fresh_resume_added_records": 0,
+  "schema_validated_records": 43,
+  "bundle_sha256": "5fc742b9aeffaf22bb0d5bd969c310c9bce7468e7f82179f5197e8c2059731aa",
+  "raw_report_sha256": "c7baab38012975121fdb902b919d65eb891c90facfeaa3df28215af7ee0e1f69",
+  "spending_ledger_sha256": "e5f3966f0c774fa69cb9e591d1e01148ad77e98bd1f103ef816ccf50045a9de6",
+  "script_sha256": "3001091d453e193d0b6ecec53e3a002c7e66566e7f5bbec19692ab426fd9cfb6",
+  "fixture_sha256": {
+    "blue-matching.png": "fa172555a9e3716f8532ae46f6c9dc819c349a802f4689bd90cdf7ce19d4c204",
+    "blue-other.png": "a4ff0377413534602fb91bcdd91d4cb8599951e5213a9c9d15207b1781c8e6f1",
+    "red-matching.png": "caa1d2a6ba43129e4f961350f84de0e3b705286fdcfa68abb15489ec35827927",
+    "red-other.png": "f397c58340e0325c9e5a826d2c9755732c0fe890f78168a30286f05066d98f98"
+  },
+  "responses": [
+    {
+      "record_id": "d8c4a896-3b31-45f6-9069-f7152239f1a6",
+      "provider": "openai",
+      "mode": "pointwise",
+      "returned_model": "gpt-5.4-mini-2026-03-17",
+      "status": "success",
+      "usage": {
+        "input_tokens": 319,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 47,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 366
+      },
+      "estimated_cost_usd": 0.00045075,
+      "elapsed_ms": 2304.3685980010196,
+      "labels": {
+        "task": "pass"
+      },
+      "order_mapping": {
+        "A": "22338877c71c78a99187474436c126d29bd71c7b5266ea7d8998a914dd66f013"
+      },
+      "mapped_labels": null,
+      "fixture_expectation_matched": true
+    },
+    {
+      "record_id": "5e915bc5-5dec-4f0b-b0e4-cb873a45716c",
+      "provider": "openai",
+      "mode": "pointwise",
+      "returned_model": "gpt-5.4-mini-2026-03-17",
+      "status": "success",
+      "usage": {
+        "input_tokens": 319,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 49,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 368
+      },
+      "estimated_cost_usd": 0.00045975,
+      "elapsed_ms": 1326.6239820004557,
+      "labels": {
+        "task": "pass"
+      },
+      "order_mapping": {
+        "A": "3c1944981ec745f894dc8469aab1e729c1744f3abfe895b473b0fd22b6508572"
+      },
+      "mapped_labels": null,
+      "fixture_expectation_matched": true
+    },
+    {
+      "record_id": "3277bf34-000a-4fb2-89d0-875d2001c9f8",
+      "provider": "openai",
+      "mode": "pointwise",
+      "returned_model": "gpt-5.4-mini-2026-03-17",
+      "status": "success",
+      "usage": {
+        "input_tokens": 319,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 49,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 368
+      },
+      "estimated_cost_usd": 0.00045975,
+      "elapsed_ms": 1619.6579820025363,
+      "labels": {
+        "task": "fail"
+      },
+      "order_mapping": {
+        "A": "837c29ea3a721f7cfeacfadcc44ff4321840a9f5d0a032382ca4043ecee7e8bd"
+      },
+      "mapped_labels": null,
+      "fixture_expectation_matched": true
+    },
+    {
+      "record_id": "1b7a7c04-f769-4261-9206-441074f14675",
+      "provider": "openai",
+      "mode": "pointwise",
+      "returned_model": "gpt-5.4-mini-2026-03-17",
+      "status": "success",
+      "usage": {
+        "input_tokens": 319,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 47,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 366
+      },
+      "estimated_cost_usd": 0.00045075,
+      "elapsed_ms": 1041.5844470044249,
+      "labels": {
+        "task": "fail"
+      },
+      "order_mapping": {
+        "A": "104c871ce47eb8c8b0029a6c73c0f2faaa20cadcb4ba4ec3affcae053c290600"
+      },
+      "mapped_labels": null,
+      "fixture_expectation_matched": true
+    },
+    {
+      "record_id": "c00f1b91-fabf-4c37-bcef-138fa154b488",
+      "provider": "openai",
+      "mode": "pairwise",
+      "returned_model": "gpt-5.4-mini-2026-03-17",
+      "status": "success",
+      "usage": {
+        "input_tokens": 371,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 78,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 449
+      },
+      "estimated_cost_usd": 0.00062925,
+      "elapsed_ms": 1349.7129550014506,
+      "labels": {
+        "task": "B"
+      },
+      "order_mapping": {
+        "A": "837c29ea3a721f7cfeacfadcc44ff4321840a9f5d0a032382ca4043ecee7e8bd",
+        "B": "3c1944981ec745f894dc8469aab1e729c1744f3abfe895b473b0fd22b6508572"
+      },
+      "mapped_labels": {
+        "task": "3c1944981ec745f894dc8469aab1e729c1744f3abfe895b473b0fd22b6508572"
+      },
+      "fixture_expectation_matched": true
+    },
+    {
+      "record_id": "ae8f273d-191a-4250-805f-ca4d1a4df2b5",
+      "provider": "openai",
+      "mode": "pairwise",
+      "returned_model": "gpt-5.4-mini-2026-03-17",
+      "status": "success",
+      "usage": {
+        "input_tokens": 371,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 70,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 441
+      },
+      "estimated_cost_usd": 0.00059325,
+      "elapsed_ms": 1620.9326059979503,
+      "labels": {
+        "task": "A"
+      },
+      "order_mapping": {
+        "A": "22338877c71c78a99187474436c126d29bd71c7b5266ea7d8998a914dd66f013",
+        "B": "104c871ce47eb8c8b0029a6c73c0f2faaa20cadcb4ba4ec3affcae053c290600"
+      },
+      "mapped_labels": {
+        "task": "22338877c71c78a99187474436c126d29bd71c7b5266ea7d8998a914dd66f013"
+      },
+      "fixture_expectation_matched": true
+    },
+    {
+      "record_id": "b768bf07-cd3c-4e10-902e-6d315cc926fa",
+      "provider": "anthropic",
+      "mode": "pointwise",
+      "returned_model": "claude-haiku-4-5-20251001",
+      "status": "success",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "inference_geo": "not_available",
+        "input_tokens": 555,
+        "output_tokens": 72,
+        "service_tier": "standard",
+        "speed": "standard"
+      },
+      "estimated_cost_usd": 0.000915,
+      "elapsed_ms": 3431.5982659973088,
+      "labels": {
+        "task": "pass"
+      },
+      "order_mapping": {
+        "A": "22338877c71c78a99187474436c126d29bd71c7b5266ea7d8998a914dd66f013"
+      },
+      "mapped_labels": null,
+      "fixture_expectation_matched": true
+    },
+    {
+      "record_id": "44a5eb23-6a39-4336-9f7a-0e30a669d419",
+      "provider": "anthropic",
+      "mode": "pointwise",
+      "returned_model": "claude-haiku-4-5-20251001",
+      "status": "success",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "inference_geo": "not_available",
+        "input_tokens": 555,
+        "output_tokens": 73,
+        "service_tier": "standard",
+        "speed": "standard"
+      },
+      "estimated_cost_usd": 0.00092,
+      "elapsed_ms": 2034.3356579978717,
+      "labels": {
+        "task": "pass"
+      },
+      "order_mapping": {
+        "A": "3c1944981ec745f894dc8469aab1e729c1744f3abfe895b473b0fd22b6508572"
+      },
+      "mapped_labels": null,
+      "fixture_expectation_matched": true
+    },
+    {
+      "record_id": "c2de11da-fd9f-403b-bf6c-57a4b5199512",
+      "provider": "anthropic",
+      "mode": "pointwise",
+      "returned_model": "claude-haiku-4-5-20251001",
+      "status": "success",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "inference_geo": "not_available",
+        "input_tokens": 555,
+        "output_tokens": 82,
+        "service_tier": "standard",
+        "speed": "standard"
+      },
+      "estimated_cost_usd": 0.000965,
+      "elapsed_ms": 1891.9185499980813,
+      "labels": {
+        "task": "fail"
+      },
+      "order_mapping": {
+        "A": "837c29ea3a721f7cfeacfadcc44ff4321840a9f5d0a032382ca4043ecee7e8bd"
+      },
+      "mapped_labels": null,
+      "fixture_expectation_matched": true
+    },
+    {
+      "record_id": "1aa49fcb-79fc-46e9-b847-cacdcc9d3607",
+      "provider": "anthropic",
+      "mode": "pointwise",
+      "returned_model": "claude-haiku-4-5-20251001",
+      "status": "success",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "inference_geo": "not_available",
+        "input_tokens": 555,
+        "output_tokens": 75,
+        "service_tier": "standard",
+        "speed": "standard"
+      },
+      "estimated_cost_usd": 0.00093,
+      "elapsed_ms": 1796.8260890047532,
+      "labels": {
+        "task": "fail"
+      },
+      "order_mapping": {
+        "A": "104c871ce47eb8c8b0029a6c73c0f2faaa20cadcb4ba4ec3affcae053c290600"
+      },
+      "mapped_labels": null,
+      "fixture_expectation_matched": true
+    },
+    {
+      "record_id": "6c662db2-d2f5-48c3-bd00-5c8558d5e261",
+      "provider": "anthropic",
+      "mode": "pairwise",
+      "returned_model": "claude-haiku-4-5-20251001",
+      "status": "success",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "inference_geo": "not_available",
+        "input_tokens": 618,
+        "output_tokens": 117,
+        "service_tier": "standard",
+        "speed": "standard"
+      },
+      "estimated_cost_usd": 0.001203,
+      "elapsed_ms": 3366.801171003317,
+      "labels": {
+        "task": "B"
+      },
+      "order_mapping": {
+        "A": "837c29ea3a721f7cfeacfadcc44ff4321840a9f5d0a032382ca4043ecee7e8bd",
+        "B": "3c1944981ec745f894dc8469aab1e729c1744f3abfe895b473b0fd22b6508572"
+      },
+      "mapped_labels": {
+        "task": "3c1944981ec745f894dc8469aab1e729c1744f3abfe895b473b0fd22b6508572"
+      },
+      "fixture_expectation_matched": true
+    },
+    {
+      "record_id": "f040bc5e-1f7b-4349-b33f-794c0d37ada6",
+      "provider": "anthropic",
+      "mode": "pairwise",
+      "returned_model": "claude-haiku-4-5-20251001",
+      "status": "success",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "inference_geo": "not_available",
+        "input_tokens": 618,
+        "output_tokens": 111,
+        "service_tier": "standard",
+        "speed": "standard"
+      },
+      "estimated_cost_usd": 0.001173,
+      "elapsed_ms": 2301.435371002299,
+      "labels": {
+        "task": "A"
+      },
+      "order_mapping": {
+        "A": "22338877c71c78a99187474436c126d29bd71c7b5266ea7d8998a914dd66f013",
+        "B": "104c871ce47eb8c8b0029a6c73c0f2faaa20cadcb4ba4ec3affcae053c290600"
+      },
+      "mapped_labels": {
+        "task": "22338877c71c78a99187474436c126d29bd71c7b5266ea7d8998a914dd66f013"
+      },
+      "fixture_expectation_matched": true
+    }
+  ],
+  "limitations": [
+    "Four generated color/shape fixtures only; this does not validate research conclusions or broad model quality.",
+    "Retry, rate-limit, timeout and reconciliation branches remain verified only offline; no paid fault induction was performed.",
+    "Token-based cost is estimated from recorded official rates and response usage; actual provider billing was not checked.",
+    "Only the named model snapshots, image inputs and sparse one-pass protocols were exercised."
+  ],
+  "credential_handling": "Read from an existing authorized local environment file into the test process only; no key was copied into source or evidence."
+}

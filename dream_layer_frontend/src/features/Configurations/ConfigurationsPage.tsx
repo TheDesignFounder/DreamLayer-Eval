@@ -73,7 +73,7 @@ const ConfigurationsPage = () => {
   ) => {
     try {
       if ('showDirectoryPicker' in window) {
-        const dirHandle = await (window as any).showDirectoryPicker();
+        const dirHandle = await (window as Window & { showDirectoryPicker: () => Promise<{ name: string }> }).showDirectoryPicker();
         setter(dirHandle.name);
       } else {
         fileInputRef.current?.click();
@@ -225,7 +225,6 @@ const ConfigurationsPage = () => {
               <input
                 ref={outputDirRef}
                 type="file"
-                // @ts-ignore
                 webkitdirectory=""
                 style={{ display: 'none' }}
                 onChange={(e) => handleFileInputChange(e, setOutputDirectory)}
@@ -254,7 +253,6 @@ const ConfigurationsPage = () => {
               <input
                 ref={modelsDirRef}
                 type="file"
-                // @ts-ignore
                 webkitdirectory=""
                 style={{ display: 'none' }}
                 onChange={(e) => handleFileInputChange(e, setModelsDirectory)}
@@ -283,7 +281,6 @@ const ConfigurationsPage = () => {
               <input
                 ref={controlNetRef}
                 type="file"
-                // @ts-ignore
                 webkitdirectory=""
                 style={{ display: 'none' }}
                 onChange={(e) => handleFileInputChange(e, setControlNetModelsPath)}
@@ -312,7 +309,6 @@ const ConfigurationsPage = () => {
               <input
                 ref={upscalerRef}
                 type="file"
-                // @ts-ignore
                 webkitdirectory=""
                 style={{ display: 'none' }}
                 onChange={(e) => handleFileInputChange(e, setUpscalerModelsPath)}
@@ -341,7 +337,6 @@ const ConfigurationsPage = () => {
               <input
                 ref={vaeRef}
                 type="file"
-                // @ts-ignore
                 webkitdirectory=""
                 style={{ display: 'none' }}
                 onChange={(e) => handleFileInputChange(e, setVaeModelsPath)}
@@ -370,7 +365,6 @@ const ConfigurationsPage = () => {
               <input
                 ref={loraRef}
                 type="file"
-                // @ts-ignore
                 webkitdirectory=""
                 style={{ display: 'none' }}
                 onChange={(e) => handleFileInputChange(e, setLoraEmbeddingsPath)}

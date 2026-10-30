@@ -1,0 +1,157 @@
+{
+  "recorded_at": "2026-10-30T07:24:53.773287+00:00",
+  "package_version": "1.1.0",
+  "record_schema": 1,
+  "bundle_schema": 1,
+  "sqlite_migration": 2,
+  "platform": "macOS-13.1-x86_64-i386-64bit",
+  "node": "20.19.3",
+  "npm": "11.6.0",
+  "offline_suites": [
+    {
+      "environment": "clean",
+      "python": "3.11.13",
+      "passed": 173,
+      "elapsed_seconds": 16.91,
+      "runtime_hygiene": {
+        "pytest_exit_code": 0,
+        "runtime_files_checked": 5,
+        "changed_runtime_artifacts": [],
+        "scope": "Runtime output, served media, input, logs, databases and report ZIPs outside .research, dependency environments and docs"
+      }
+    },
+    {
+      "environment": "ml",
+      "python": "3.11.13",
+      "passed": 173,
+      "elapsed_seconds": 20.85,
+      "runtime_hygiene": {
+        "pytest_exit_code": 0,
+        "runtime_files_checked": 5,
+        "changed_runtime_artifacts": [],
+        "scope": "Runtime output, served media, input, logs, databases and report ZIPs outside .research, dependency environments and docs"
+      }
+    },
+    {
+      "environment": "python312",
+      "python": "3.12.10",
+      "passed": 173,
+      "elapsed_seconds": 20.16,
+      "runtime_hygiene": {
+        "pytest_exit_code": 0,
+        "runtime_files_checked": 5,
+        "changed_runtime_artifacts": [],
+        "scope": "Runtime output, served media, input, logs, databases and report ZIPs outside .research, dependency environments and docs"
+      }
+    }
+  ],
+  "browser": {
+    "passed": 4,
+    "elapsed_seconds": 26.7,
+    "api_port": 5057,
+    "frontend_port": 8082,
+    "judge_provider": "synthetic",
+    "launcher": "scripts/research_browser_check.py"
+  },
+  "frontend": {
+    "typecheck": "passed",
+    "lint_errors": 0,
+    "lint_warnings": 12,
+    "production_build": "passed",
+    "build_warning": "Existing chunk larger than 500 kB"
+  },
+  "python_style": {
+    "ruff": "0.14.2",
+    "lint": "passed",
+    "format": "passed",
+    "files": 50,
+    "public_signatures_and_docstrings": 115,
+    "full_static_typing_verified": false
+  },
+  "distribution": {
+    "wheel_build": "passed",
+    "sdist_build": "passed",
+    "private_files_excluded": true,
+    "legacy_tests_excluded_from_sdist": true,
+    "final_wheel_package_bytes_match_isolated_install": true,
+    "wheel_sha256": "fcc3d67827f8d7dc4e7d47a6001b28d86043de2146861ead7ed927cc1d66a08f",
+    "sdist_sha256": "6acd8ce28119c928b9f2f63240db629722f2bde569d5032f084b42a6005c9a81",
+    "isolated_cli_replay": {
+      "status": "passed",
+      "package_version": "1.1.0",
+      "python": "3.11.13",
+      "installed_package_outside_source": true,
+      "schemas_present": true,
+      "cli_demo_export_import_run_analyze": "passed",
+      "fresh_resume_added_records": 0,
+      "fresh_replay_exact": true,
+      "bundle_sha256": "f93b522d1c03a868ea1a4424e23b6e93c2850a22b82b0a4443d607a3003105d8"
+    },
+    "demo_counts": {
+      "planned": 5,
+      "generated": 4,
+      "failed": 1,
+      "scored": 3,
+      "annotations": 0
+    },
+    "documentation_update": "Rebuilt after live-smoke evidence; installed research package bytes remain identical"
+  },
+  "ci": {
+    "workflow": ".github/workflows/research.yml",
+    "hosted_execution": "not_run",
+    "configured_python": [
+      "3.11",
+      "3.12"
+    ],
+    "configured_platforms": [
+      "ubuntu-latest",
+      "macos-latest"
+    ],
+    "configured_node": "22",
+    "native_windows": "Explicit unsupported-platform contract only",
+    "actionlint": "1.7.12 passed; shellcheck integration disabled"
+  },
+  "archive": {
+    "earlier_files_verified_unchanged": 202,
+    "raw_logs_location": "Outside public tree; local pointer in ignored storage",
+    "original_browser_bundle_sha256": "584a1774f820e7325d0c5cd54d570bed38de5b48ea0250093e86d87d624274cf"
+  },
+  "research_source_hash": "333e629d637646e0aa53ec458fbbab08ee9013ac8ab9c51f75b5699b3caa8279",
+  "remaining_unverified": [
+    "Live provider video/two-pass judging and rate-limit/timeout/retry/reconciliation failure paths",
+    "ComfyUI diffusion/model-based generation",
+    "VQAScore",
+    "DINO",
+    "LPIPS",
+    "I3D inference",
+    "Hosted Linux/macOS CI matrix",
+    "Migration of an original historical runtime database"
+  ],
+  "native_windows_supported": false,
+  "other_evidence": [
+    "model-smoke.json",
+    "comfy-smoke.json",
+    "scale.json",
+    "ambiguous-provenance.json",
+    "fvd-preprocessing.json",
+    "historical.json",
+    "live-smoke.json"
+  ],
+  "updated_at": "2026-10-30T07:46:23.603944+00:00",
+  "live_provider_smoke": {
+    "evidence": "live-smoke.json",
+    "executed_at": "2026-10-30T07:42:02.531000+00:00",
+    "status": "passed",
+    "real_http_calls": 12,
+    "providers": [
+      "openai",
+      "anthropic"
+    ],
+    "authorized_total_usd": 5,
+    "estimated_total_usd": 0.0091495,
+    "billing_confirmed": false,
+    "resume_added_calls": 0,
+    "fresh_replay_exact": true,
+    "network_blocked_replay": "passed"
+  }
+}

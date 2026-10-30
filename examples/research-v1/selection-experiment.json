@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "name": "Fixed-pool selection template v1",
+  "models": [
+    "candidate-generator"
+  ],
+  "prompts": [
+    {
+      "id": "p1",
+      "text": "A plain field",
+      "group_id": "family-1",
+      "split": "test"
+    }
+  ],
+  "assets": [
+    {
+      "path": "tests/fixtures/research/zero caf\u00e9.png",
+      "prompt_id": "p1",
+      "model": "candidate-generator",
+      "repeat_index": 0
+    },
+    {
+      "path": "tests/fixtures/research/same name/zero caf\u00e9.png",
+      "prompt_id": "p1",
+      "model": "candidate-generator",
+      "repeat_index": 1
+    }
+  ],
+  "metrics": [
+    {
+      "id": "pixel_luminance"
+    }
+  ],
+  "judges": []
+}

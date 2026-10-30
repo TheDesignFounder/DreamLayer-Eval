@@ -1,3 +1,4 @@
+import type { ModelType } from '@/components/ModelDropZone';
 export interface CheckpointModel {
   id: string;
   name: string;
@@ -120,7 +121,9 @@ export interface ModelInfo {
     id: string;
     name: string;
     filename: string;
-    type: string;
+    type: ModelType;
+  size?: number;
+  dateAdded?: string;
     path?: string;
 }
 
@@ -148,7 +151,7 @@ export const fetchAllModelTypes = async (): Promise<ModelInfo[]> => {
 
         // Process LoRAs
         if (loras.status === 'fulfilled') {
-            loras.value.forEach((model: any) => {
+            loras.value.forEach((model: CheckpointModel) => {
                 allModels.push({
                     id: model.id || model.filename,
                     name: model.name || model.filename.replace(/\.[^/.]+$/, ""),
@@ -161,7 +164,7 @@ export const fetchAllModelTypes = async (): Promise<ModelInfo[]> => {
 
         // Process ControlNet models
         if (controlnets.status === 'fulfilled') {
-            controlnets.value.forEach((model: any) => {
+            controlnets.value.forEach((model: string | CheckpointModel) => {
                 const filename = typeof model === 'string' ? model : model.filename;
                 allModels.push({
                     id: filename,
@@ -175,7 +178,7 @@ export const fetchAllModelTypes = async (): Promise<ModelInfo[]> => {
 
         // Process Upscaler models
         if (upscalers.status === 'fulfilled') {
-            upscalers.value.forEach((model: any) => {
+            upscalers.value.forEach((model: CheckpointModel) => {
                 allModels.push({
                     id: model.id || model.filename,
                     name: model.name || model.filename.replace(/\.[^/.]+$/, ""),
@@ -195,7 +198,9 @@ export const fetchAllModelTypes = async (): Promise<ModelInfo[]> => {
 
 // WebSocket Model Refresh Listener Types
 export interface ModelRefreshEvent {
-    model_type: string;
+    model_type: ModelType;
+  size?: number;
+  dateAdded?: string;
     filename: string;
     action: 'added' | 'removed';
     timestamp: number;

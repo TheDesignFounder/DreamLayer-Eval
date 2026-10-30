@@ -18,7 +18,7 @@ def run_tests(test_type="all", verbose=False):
     print("=" * 40)
     
     # Base pytest command
-    cmd = ["python", "-m", "pytest"]
+    cmd = [sys.executable, "-m", "pytest"]
     
     if verbose:
         cmd.append("-v")

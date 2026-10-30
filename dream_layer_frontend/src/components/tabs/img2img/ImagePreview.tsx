@@ -7,7 +7,7 @@ import JSZip from 'jszip';
 import EvalMetrics from '@/components/EvalMetrics';
 
 interface ImagePreviewProps {
-  onTabChange: (tabId: string) => void;
+  onTabChange?: (tabId: string) => void;
 }
 
 const LoadingAnimation = () => (
@@ -182,7 +182,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ onTabChange }) => {
         window.sessionStorage.setItem('img2vidImageUrl', imageUrl);
 
         // Switch to img2vid tab
-        onTabChange('img2vid');
+        onTabChange?.('img2vid');
       } catch (error) {
         console.error('Error sending to img2vid:', error);
       }
@@ -222,7 +222,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ onTabChange }) => {
           }));
           
           // Switch to extras tab
-          onTabChange('extras');
+          onTabChange?.('extras');
         }
       } catch (error) {
         console.error('Error sending to extras:', error);
@@ -260,7 +260,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ onTabChange }) => {
     if (!currentImage?.settings) return 'No settings available';
     
     const settings = currentImage.settings;
-    const settingsAny = settings as any; // Type assertion for additional properties
+    const settingsAny = settings as typeof settings & { model_hash?: string }; // Type assertion for additional properties
     return `Prompt: ${currentImage.prompt || 'N/A'}
 
 Negative prompt: ${currentImage.negativePrompt || 'N/A'}
@@ -273,9 +273,7 @@ Size: ${settings.width || 'N/A'}x${settings.height || 'N/A'}
 Model hash: ${settingsAny.model_hash || 'N/A'}
 Model: ${settings.model_name || 'N/A'}
 Denoising strength: ${settings.denoising_strength || 'N/A'}
-Version: v1.6.0
-Networks not found: add-detail-xl, Double_Exposure
-Time taken: 31.1 sec.`;
+Provider revision and measured latency: unavailable`;
   };
 
   const renderContent = () => {
@@ -438,15 +436,7 @@ Time taken: 31.1 sec.`;
                 <Download className="w-3 h-3 mr-1" />
                 PNG
               </Button>
-              {false && <Button 
-                variant="outline" 
-                size="sm" 
-                className="text-xs h-8"
-                onClick={() => handleDownload('zip')}
-              >
-                <Download className="w-3 h-3 mr-1" />
-                ZIP
-              </Button>}
+              
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -553,7 +543,7 @@ Time taken: 31.1 sec.`;
               setMetricsLoading(true);
               try {
                 // Prepare request body
-                const requestBody: any = {
+                const requestBody: Record<string, unknown> = {
                   image_url: currentImage.url,
                   prompt: currentImage.prompt || ''
                 };

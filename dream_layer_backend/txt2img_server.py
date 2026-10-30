@@ -15,7 +15,6 @@ from txt2img_workflow import transform_to_txt2img_workflow
 from run_registry import create_run_config_from_generation_data, registry
 from dataclasses import asdict
 import base64
-import google.generativeai as genai
 from datetime import datetime
 import generation_history as gh
 import cleanup_scheduler
@@ -23,6 +22,7 @@ import cleanup_scheduler
 def call_banana_api_directly(data):
     """Call Gemini API directly for banana models, bypassing ComfyUI"""
     try:
+        import google.generativeai as genai  # Optional legacy provider; core startup stays offline.
         # Configure Gemini with API key
         from dream_layer_backend_utils.api_key_injector import read_api_keys_from_env
         api_keys = read_api_keys_from_env()
@@ -94,7 +94,7 @@ socketio = SocketIO(app, cors_allowed_origins=["http://localhost:8080", "http://
 
 # Get served images directory
 output_dir, _ = get_directories()
-SERVED_IMAGES_DIR = os.path.join(os.path.dirname(__file__), 'served_images')
+SERVED_IMAGES_DIR = os.getenv('DREAMLAYER_SERVED_IMAGES_DIR', os.path.join(os.path.dirname(__file__), 'served_images'))
 os.makedirs(SERVED_IMAGES_DIR, exist_ok=True)
 
 
@@ -137,6 +137,7 @@ def handle_txt2img():
             # Extract batch_count and implement loop
             batch_count = data.get('batch_count', 1)
             all_generated_images = []
+            failures = []
             
             for iteration in range(batch_count):
                 try:
@@ -161,6 +162,7 @@ def handle_txt2img():
                         comfy_response = send_to_comfyui(workflow)
                     
                     if "error" in comfy_response:
+                        failures.append({'iteration': iteration, 'reason': str(comfy_response['error'])})
                         print(f"⚠️ Error in iteration {iteration + 1}: {comfy_response['error']}")
                         continue  # Continue with next iteration
                     
@@ -206,11 +208,15 @@ def handle_txt2img():
                         print(f"⚠️ Error registering run for iteration {iteration + 1}: {str(e)}")
                         
                 except Exception as e:
+                    failures.append({'iteration': iteration, 'reason': str(e)})
                     print(f"⚠️ Error in iteration {iteration + 1}: {str(e)}")
                     continue  # Continue with next iteration
             
+            if not all_generated_images:
+                return jsonify({'status': 'error', 'message': 'No generation outputs', 'failures': failures}), 502
             response = jsonify({
                 "status": "success",
+                "failures": failures,
                 "message": "Workflow sent to ComfyUI successfully",
                 "comfy_response": {
                     "all_images": all_generated_images

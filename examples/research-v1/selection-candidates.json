@@ -1,0 +1,42 @@
+[
+  {
+    "id": "p1-c0",
+    "prompt_id": "p1",
+    "group_id": "family-1",
+    "split": "test",
+    "scores": {
+      "proxy": 0
+    },
+    "human": "pass"
+  },
+  {
+    "id": "p1-c1",
+    "prompt_id": "p1",
+    "group_id": "family-1",
+    "split": "test",
+    "scores": {
+      "proxy": 1
+    },
+    "human": "fail"
+  },
+  {
+    "id": "p2-c0",
+    "prompt_id": "p2",
+    "group_id": "family-2",
+    "split": "test",
+    "scores": {
+      "proxy": 0
+    },
+    "human": "pass"
+  },
+  {
+    "id": "p2-c1",
+    "prompt_id": "p2",
+    "group_id": "family-2",
+    "split": "test",
+    "scores": {
+      "proxy": 1
+    },
+    "human": "fail"
+  }
+]

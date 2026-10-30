@@ -1,0 +1,44 @@
+{
+  "status": "passed",
+  "fixture_sha256": "a96d73cadeba9249c91106da299180c179819a42cf42d4428fcc35b138a87cf0",
+  "checks": [
+    {
+      "flags": [],
+      "result_count": 2,
+      "added_results": 0,
+      "ambiguous_warnings": 2,
+      "exit_code": 0
+    },
+    {
+      "flags": [
+        "--rerun-failed"
+      ],
+      "result_count": 2,
+      "added_results": 0,
+      "ambiguous_warnings": 2,
+      "exit_code": 0
+    },
+    {
+      "flags": [
+        "--upgrade-evaluators"
+      ],
+      "result_count": 2,
+      "added_results": 0,
+      "ambiguous_warnings": 2,
+      "exit_code": 0
+    },
+    {
+      "flags": [
+        "--rerun-failed",
+        "--upgrade-evaluators"
+      ],
+      "result_count": 2,
+      "added_results": 0,
+      "ambiguous_warnings": 2,
+      "exit_code": 0
+    }
+  ],
+  "original_payloads_unchanged": true,
+  "provider_calls": 0,
+  "scope": "Separate hand-authored fixture and CLI execution, not external reviewer confirmation."
+}

@@ -8,6 +8,7 @@ export default defineConfig({
   server: {
     host: "127.0.0.1",
     port: 8080,
+    proxy: { '/api/research': process.env.RESEARCH_API_URL || 'http://127.0.0.1:5055' },
   },
   plugins: [
     react(),

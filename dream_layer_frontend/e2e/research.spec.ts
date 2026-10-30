@@ -1,0 +1,97 @@
+import { test, expect } from '@playwright/test';
+import path from 'node:path';
+import { readFileSync } from 'node:fs';
+import { api, artifactPath } from './artifacts';
+
+const root = path.resolve('..');
+const fixtures = path.join(root, '.research/fixtures');
+
+test('actual UI: import → configure → run → inspect → two raters → analyze → bundle replay', async ({ page, request }) => {
+  const errors: string[] = [];
+  page.on('pageerror', e => errors.push(e.message));
+  const failures: string[] = [];
+  page.on('requestfailed', r => { if (!r.failure()?.errorText.includes('ERR_ABORTED')) failures.push(r.url()); });
+  await page.goto('/research');
+  await expect(page.getByRole('heading', { name: 'Research workbench' })).toBeVisible();
+  await page.getByLabel('Import media', { exact: true }).setInputFiles(path.join(fixtures, 'zero café.png'));
+  await expect(page.getByRole('status')).toContainText('Imported 1 media');
+  const uploaded = JSON.parse(await page.getByLabel('Experiment configuration, including editable criteria').inputValue());
+  expect(uploaded.assets[0].path).toBeTruthy();
+  const config = JSON.parse(readFileSync(path.join(fixtures, 'experiment.json'), 'utf8'));
+  config.name = 'Browser validation ' + Date.now();
+  await page.getByLabel('Experiment configuration, including editable criteria').fill(JSON.stringify(config));
+  await page.getByRole('button', { name: 'Create experiment', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Configuration frozen');
+  const eid = await page.getByLabel('Experiment', { exact: true }).inputValue();
+  await page.getByRole('button', { name: 'Dry run', exact: true }).click();
+  await expect(page.getByTestId('analysis-report')).toContainText('expected_trials');
+  await page.getByRole('button', { name: 'Run / resume' }).click();
+  await expect(page.getByTestId('job-state')).toContainText('complete', { timeout: 30000 });
+  const video = page.locator('video').first();
+  await video.evaluate(async v => { await (v as HTMLVideoElement).play(); });
+  await expect.poll(() => video.evaluate(v => (v as HTMLVideoElement).currentTime)).toBeGreaterThan(0);
+  await video.evaluate(v => (v as HTMLVideoElement).pause());
+  await expect(page.getByTestId('metric-score').filter({ hasText: /^0\.00000$/ })).toHaveCount(1);
+  await expect(page.getByText('insufficient_data', { exact: true }).first()).toBeVisible();
+  await expect(page.getByTestId('metric-score').filter({ hasText: '—' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Analyze', exact: true }).click();
+  await expect(page.getByTestId('analysis-report')).toContainText('"failed": 1');
+  const before = await (await request.get(`${api}/api/research/experiments/${eid}/analysis`)).json();
+  for (const rater of [`browser-${eid}-1`, `browser-${eid}-2`]) {
+    await page.getByLabel('Rater ID', { exact: true }).fill(rater);
+    await page.getByRole('button', { name: 'Create review assignments' }).click();
+    await expect(page.getByRole('status')).toContainText('Assignments saved');
+    await page.getByRole('link', { name: 'Open blinded review' }).click();
+    await expect(page.getByRole('heading', { name: 'Blinded media review' })).toBeVisible();
+    await expect(page.getByLabel('Criterion task')).toBeVisible();
+    const assignments = await (await request.get(`${api}/api/research/review?rater=${encodeURIComponent(rater)}`)).json();
+    const videoAssignment = assignments.find((a: { media: { modality: string }[] }) => a.media.some(m => m.modality === 'video'));
+    await page.getByLabel('Review assignment').selectOption(videoAssignment.id);
+    const reviewVideo = page.getByTestId('review-video');
+    await reviewVideo.evaluate(async v => { await (v as HTMLVideoElement).play(); });
+    await expect.poll(() => reviewVideo.evaluate(v => (v as HTMLVideoElement).currentTime)).toBeGreaterThan(0);
+    await reviewVideo.evaluate(v => (v as HTMLVideoElement).pause());
+    await page.getByLabel('Failure intervals').fill('[[0,0.05]]');
+
+    const body = await page.locator('body').innerText();
+    expect(body).not.toContain('fixture-black');
+    expect(body).not.toContain('zero café.png');
+    await page.getByLabel('Criterion task').selectOption(rater.endsWith('1') ? 'pass' : 'uncertain');
+    await page.getByLabel('Comment', { exact: true }).fill('Browser validation; synthetic fixture');
+    await page.getByRole('button', { name: 'Save annotation', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Independent annotation saved');
+    await page.reload();
+    await expect(page.getByLabel('Review assignment').locator('option').filter({ hasText: 'saved' })).toHaveCount(1);
+    await page.goto('/research');
+    await page.getByLabel('Experiment', { exact: true }).selectOption(eid);
+  }
+  await page.getByRole('button', { name: 'Analyze', exact: true }).click();
+  await expect(page.getByTestId('analysis-report')).toContainText('"annotations": 2');
+  const downloadEvent = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Export experiment', exact: true }).click();
+  const download = await downloadEvent;
+  const bundle = artifactPath('initial-workflow', 'browser-experiment.zip');
+  await download.saveAs(bundle);
+  await page.getByLabel('Reload bundle').setInputFiles(bundle);
+  await expect(page.getByRole('status')).toContainText('Bundle verified and imported');
+  await page.getByRole('button', { name: 'Analyze', exact: true }).click();
+  await expect(page.getByTestId('analysis-report')).toContainText('"annotations": 2');
+  await page.screenshot({ path: artifactPath('initial-workflow', 'research-workbench.png'), fullPage: true });
+  const after = await (await request.get(`${api}/api/research/experiments/${eid}/analysis`)).json();
+  expect(after.metrics).toEqual(before.metrics);
+  expect(errors).toEqual([]);
+  expect(failures).toEqual([]);
+});
+
+test('UI displays invalid config, rubric and corrupt media errors', async ({ page }) => {
+  await page.goto('/research');
+  await page.getByLabel('Experiment configuration, including editable criteria').fill('{}');
+  await page.getByRole('button', { name: 'Create experiment', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('schema_version');
+  await page.getByLabel('Import media', { exact: true }).setInputFiles(path.join(fixtures, 'corrupt.png'));
+  await expect(page.getByRole('alert')).toContainText('Cannot inspect media');
+  await page.getByLabel('Experiment', { exact: true }).selectOption({ index: 1 });
+  await page.getByLabel('Rubric', { exact: true }).fill('{}');
+  await page.getByRole('button', { name: 'Create review assignments' }).click();
+  await expect(page.getByRole('alert')).toContainText('versioned rubric');
+});

@@ -1,0 +1,315 @@
+{
+  "recorded_at": "2026-10-30T08:31:45.343680+00:00",
+  "status": "passed",
+  "research_package_version": "1.1.0",
+  "runtime_files_changed": [
+    "research/upgrades.py"
+  ],
+  "upgrade_policy": "Before cache insertion, a version upgrade yielding unavailable_dependency or failed_evaluation is refused when any matched current prior result succeeded. The job fails visibly and the protected results/cache remain unchanged. Other units already completed remain saved.",
+  "regressions_added": 10,
+  "upgrade_tests_passed": 23,
+  "offline_suites": [
+    {
+      "environment": "clean",
+      "python": "3.11.13",
+      "passed": 183,
+      "elapsed_seconds": 19.04,
+      "runtime_artifacts_changed": 0
+    },
+    {
+      "environment": "ml",
+      "python": "3.11.13",
+      "passed": 183,
+      "elapsed_seconds": 24.19,
+      "runtime_artifacts_changed": 0
+    },
+    {
+      "environment": "python312",
+      "python": "3.12.10",
+      "passed": 183,
+      "elapsed_seconds": 21.69,
+      "runtime_artifacts_changed": 0
+    }
+  ],
+  "browser": {
+    "passed": 4,
+    "elapsed_seconds": 18.2,
+    "api_port": 5057,
+    "frontend_port": 8082,
+    "judge_provider": "synthetic"
+  },
+  "frontend": {
+    "typecheck": "passed",
+    "lint_errors": 0,
+    "lint_warnings": 12,
+    "build": "passed",
+    "build_warning": "Existing chunk larger than 500 kB"
+  },
+  "python_checks": {
+    "ruff": "passed",
+    "format": "52 files already formatted",
+    "public_signatures_docstrings": 115,
+    "posix_platform_check": "passed"
+  },
+  "reviewer_fixture": {
+    "adaptation": "Original fixture/scenarios retained; copied probe CLI helper accepts the protective nonzero exit after asserting the preservation error. Original reviewer evidence unchanged.",
+    "results": {
+      "S1_no_weights_opaque_hash": [
+        {
+          "flags": [],
+          "state": "complete",
+          "results_total": 2,
+          "current_statuses": [
+            "success",
+            "success"
+          ],
+          "originals_unchanged": true
+        },
+        {
+          "flags": [
+            "--rerun-failed"
+          ],
+          "state": "complete",
+          "results_total": 2,
+          "current_statuses": [
+            "success",
+            "success"
+          ],
+          "originals_unchanged": true
+        },
+        {
+          "flags": [
+            "--upgrade-evaluators"
+          ],
+          "state": "complete",
+          "results_total": 2,
+          "current_statuses": [
+            "success",
+            "success"
+          ],
+          "originals_unchanged": true
+        },
+        {
+          "flags": [
+            "--rerun-failed",
+            "--upgrade-evaluators"
+          ],
+          "state": "complete",
+          "results_total": 2,
+          "current_statuses": [
+            "success",
+            "success"
+          ],
+          "originals_unchanged": true
+        }
+      ],
+      "S2_weights_resolve_then_upgrade": [
+        {
+          "flags": [],
+          "state": "complete",
+          "results_total": 2,
+          "current_statuses": [
+            "success",
+            "success"
+          ],
+          "originals_unchanged": true
+        },
+        {
+          "flags": [
+            "--rerun-failed"
+          ],
+          "state": "complete",
+          "results_total": 2,
+          "current_statuses": [
+            "success",
+            "success"
+          ],
+          "originals_unchanged": true
+        },
+        {
+          "flags": [
+            "--upgrade-evaluators"
+          ],
+          "state": "failed",
+          "results_total": 2,
+          "current_statuses": [
+            "success",
+            "success"
+          ],
+          "originals_unchanged": true
+        },
+        {
+          "flags": [
+            "--rerun-failed",
+            "--upgrade-evaluators"
+          ],
+          "state": "failed",
+          "results_total": 2,
+          "current_statuses": [
+            "success",
+            "success"
+          ],
+          "originals_unchanged": true
+        }
+      ]
+    }
+  },
+  "summary_generators": {
+    "live": {
+      "script": "scripts/research_live_summary.py",
+      "script_sha256": "d32d1a38822e47dff4b59ef41778b5db6bfcf294f03e6f37a7bf36d60b2baeec",
+      "original_summary_sha256": "61a74b11cbc7156a60909cf4588df069fd2ac273cb212c2d87fad087592e3e5d",
+      "regenerated_summary_sha256": "61a74b11cbc7156a60909cf4588df069fd2ac273cb212c2d87fad087592e3e5d",
+      "byte_identical": true,
+      "http_blocked": true,
+      "paid_calls": 0,
+      "scope": "Recorded 2026-10-30 smoke, reproduced with its original verification timestamp"
+    },
+    "fvd_preprocessing": {
+      "script": "scripts/research_fvd_preprocessing_check.py",
+      "script_sha256": "920d57c5c604663b62f59666e08e2ef7e4afec0b3bbc61e3265edf0efceca9ce",
+      "original_summary_sha256": "02ea633d83e959166d011e5f8d5bd5780bba0e4ce3b7c48f320dcc982f5bfce9",
+      "regenerated_summary_sha256": "02ea633d83e959166d011e5f8d5bd5780bba0e4ce3b7c48f320dcc982f5bfce9",
+      "byte_identical": true,
+      "extended": {
+        "status": "passed",
+        "checks": [
+          {
+            "input_shape": [
+              3,
+              4,
+              32,
+              48
+            ],
+            "output_shape": [
+              3,
+              4,
+              224,
+              224
+            ],
+            "max_difference": 0.0
+          },
+          {
+            "input_shape": [
+              3,
+              4,
+              48,
+              32
+            ],
+            "output_shape": [
+              3,
+              4,
+              224,
+              224
+            ],
+            "max_difference": 0.0
+          },
+          {
+            "input_shape": [
+              3,
+              4,
+              32,
+              32
+            ],
+            "output_shape": [
+              3,
+              4,
+              224,
+              224
+            ],
+            "max_difference": 0.0
+          },
+          {
+            "input_shape": [
+              3,
+              1,
+              17,
+              29
+            ],
+            "output_shape": [
+              3,
+              1,
+              224,
+              224
+            ],
+            "max_difference": 0.0
+          },
+          {
+            "input_shape": [
+              3,
+              7,
+              257,
+              129
+            ],
+            "output_shape": [
+              3,
+              7,
+              224,
+              224
+            ],
+            "max_difference": 0.0
+          }
+        ],
+        "scope": "Tensor preprocessing parity only; no I3D model inference"
+      },
+      "torch": "2.2.2",
+      "model_inference": false
+    }
+  },
+  "distribution": {
+    "wheel_build": "passed",
+    "sdist_build": "passed",
+    "installed_package_matches_source": true,
+    "wheel_sha256": "57c9557cc71ddce57cdad50d8238bb6b4eea1380739badea92362d83a7cc0ea5",
+    "sdist_sha256": "a597612fffa469763467e8b032696889d81b752b14337e0de2822d84674c726f",
+    "isolated_cli_replay": {
+      "status": "passed",
+      "package_version": "1.1.0",
+      "python": "3.11.13",
+      "installed_package_outside_source": true,
+      "schemas_present": true,
+      "cli_demo_export_import_run_analyze": "passed",
+      "fresh_resume_added_records": 0,
+      "fresh_replay_exact": true,
+      "bundle_sha256": "cd815e54d760612c523d3b7c31430247d4ba60d870844b71dcc82e4911211f79"
+    }
+  },
+  "evidence_preservation": {
+    "existing_summary_and_legacy_fixture_hashes_verified": 9,
+    "archived_earlier_validation_files_verified": 202,
+    "original_live_runner_sha256": "3001091d453e193d0b6ecec53e3a002c7e66566e7f5bbec19692ab426fd9cfb6",
+    "archive_log_repair": {
+      "file": "frontend-server.log",
+      "cause": "Existing Vite process retained an open descriptor after archival; later HMR appended to that inode",
+      "restored_sha256": "e45da3c246f7fd6e7db68474009d0750efacd4b1176a51ef1aa4127c490029eb",
+      "baseline_bytes": 10207,
+      "appended_bytes_preserved": 69,
+      "restored_from": "before-cleanup.tar.gz",
+      "active_log_moved_to_ignored_runtime": true,
+      "historical_bytes_restored_exactly": true
+    }
+  },
+  "scratch_database": {
+    "api_refreshed": true,
+    "records_before": 496,
+    "records_after": 496,
+    "record_payloads_identical": true,
+    "reviewer_additions_preserved": true,
+    "backup_created": true
+  },
+  "fake_key_literal_removed": true,
+  "additional_paid_provider_calls": 0,
+  "hosted_ci": {
+    "status": "not_run",
+    "reason": "Local archive has no Git metadata or remote; destination repository required",
+    "workflow_static_check": "actionlint 1.7.12 passed; shellcheck disabled"
+  },
+  "research_source_hash": "13a9163f720df03a53dd2f8bc6dc51cbabfb4abcfb4e61661163ac584fc1f0ec",
+  "limitations": [
+    "No new live provider calls or provider billing verification",
+    "No new VQAScore/DINO/LPIPS/I3D inference or diffusion validation",
+    "Original historical runtime database migration remains unverified",
+    "Native Windows execution remains unsupported",
+    "Hosted CI remains pending"
+  ]
+}

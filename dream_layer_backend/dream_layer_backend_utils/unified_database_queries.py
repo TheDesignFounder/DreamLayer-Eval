@@ -27,7 +27,7 @@ def get_all_runs_with_clipscore() -> List[Dict[str, Any]]:
                 SELECT 
                     r.*,
                     m.clip_score_mean,
-                    m.fid_score
+                    m.fid_score AS legacy_fid_score, NULL AS fid_score
                 FROM runs r
                 LEFT JOIN metrics m ON r.run_id = m.run_id
                 ORDER BY r.timestamp DESC
@@ -35,7 +35,8 @@ def get_all_runs_with_clipscore() -> List[Dict[str, Any]]:
             
             runs = []
             for row in cursor.fetchall():
-                run_dict = dict(row)
+                from research.legacy import project
+                run_dict = project(conn, dict(row))
                 # Convert JSON strings back to objects and ensure arrays exist
                 for field in ['loras', 'controlnets', 'workflow']:
                     if run_dict.get(field):
@@ -83,7 +84,7 @@ def get_single_run_with_clipscore(run_id: str) -> Optional[Dict[str, Any]]:
                 SELECT 
                     r.*,
                     m.clip_score_mean,
-                    m.fid_score
+                    m.fid_score AS legacy_fid_score, NULL AS fid_score
                 FROM runs r
                 LEFT JOIN metrics m ON r.run_id = m.run_id
                 WHERE r.run_id = ?
@@ -93,7 +94,9 @@ def get_single_run_with_clipscore(run_id: str) -> Optional[Dict[str, Any]]:
             if not row:
                 return None
             
-            run_dict = dict(row)
+            from research.legacy import project
+            
+            run_dict = project(conn, dict(row))
             # Convert JSON strings back to objects and ensure arrays exist
             for field in ['loras', 'controlnets', 'workflow']:
                 if run_dict.get(field):
@@ -135,7 +138,7 @@ def get_all_runs_with_metrics() -> List[Dict[str, Any]]:
                 SELECT
                     r.*,
                     m.clip_score_mean,
-                    m.fid_score,
+                    m.fid_score AS legacy_fid_score, NULL AS fid_score,
                     m.metadata as metrics_metadata,
                     cm.macro_precision,
                     cm.macro_recall,
@@ -143,7 +146,7 @@ def get_all_runs_with_metrics() -> List[Dict[str, Any]]:
                     cm.per_class_metrics,
                     cm.detected_objects,
                     cm.missing_objects,
-                    vm.fvd_score,
+                    vm.fvd_score AS legacy_fvd_score, NULL AS fvd_score,
                     vm.video_ssim_mean,
                     vm.video_psnr_mean,
                     vm.video_lpips_mean,
@@ -157,7 +160,8 @@ def get_all_runs_with_metrics() -> List[Dict[str, Any]]:
 
             runs = []
             for row in cursor.fetchall():
-                run_dict = dict(row)
+                from research.legacy import project
+                run_dict = project(conn, dict(row))
                 # Convert JSON strings back to objects and ensure arrays exist
                 for field in ['loras', 'controlnets', 'workflow']:
                     if run_dict.get(field):
@@ -203,7 +207,7 @@ def get_all_runs_with_metrics() -> List[Dict[str, Any]]:
                         for key in ['composition_score', 'rule_of_thirds_score', 'symmetry_score', 'balance_score',
                                     'aesthetics_score', 'color_harmony_score', 'saturation_balance', 'value_contrast',
                                     'technical_quality_score', 'sharpness_score', 'noise_level', 'artifact_score',
-                                    'overall_aesthetic_quality']:
+                                    'overall_aesthetic_quality', 'criterion_pass_rate', 'object_criteria_result']:
                             if key in mm:
                                 run_dict[key] = mm[key]
                     except (json.JSONDecodeError, TypeError):
@@ -215,8 +219,8 @@ def get_all_runs_with_metrics() -> List[Dict[str, Any]]:
                     try:
                         import json
                         vm = json.loads(run_dict['video_metadata'])
-                        for key in ['temporal_flickering_score', 'subject_consistency_score',
-                                    'background_consistency_score', 'motion_smoothness_score',
+                        for key in ['adjacent_pixel_stability', 'whole_frame_anchored_dino_cosine',
+                                    'whole_frame_adjacent_dino_cosine', 'flow_magnitude_stability',
                                     'video_aesthetic_mean', 'video_aesthetic_min', 'video_aesthetic_std']:
                             if key in vm:
                                 run_dict[key] = vm[key]
@@ -245,7 +249,7 @@ def get_single_run_with_metrics(run_id: str) -> Optional[Dict[str, Any]]:
                 SELECT
                     r.*,
                     m.clip_score_mean,
-                    m.fid_score,
+                    m.fid_score AS legacy_fid_score, NULL AS fid_score,
                     m.metadata as metrics_metadata,
                     cm.macro_precision,
                     cm.macro_recall,
@@ -253,7 +257,7 @@ def get_single_run_with_metrics(run_id: str) -> Optional[Dict[str, Any]]:
                     cm.per_class_metrics,
                     cm.detected_objects,
                     cm.missing_objects,
-                    vm.fvd_score,
+                    vm.fvd_score AS legacy_fvd_score, NULL AS fvd_score,
                     vm.video_ssim_mean,
                     vm.video_psnr_mean,
                     vm.video_lpips_mean,
@@ -269,7 +273,9 @@ def get_single_run_with_metrics(run_id: str) -> Optional[Dict[str, Any]]:
             if not row:
                 return None
 
-            run_dict = dict(row)
+            from research.legacy import project
+
+            run_dict = project(conn, dict(row))
             # Convert JSON strings back to objects and ensure arrays exist
             for field in ['loras', 'controlnets', 'workflow']:
                 if run_dict.get(field):
@@ -310,7 +316,7 @@ def get_single_run_with_metrics(run_id: str) -> Optional[Dict[str, Any]]:
                     for key in ['composition_score', 'rule_of_thirds_score', 'symmetry_score', 'balance_score',
                                 'aesthetics_score', 'color_harmony_score', 'saturation_balance', 'value_contrast',
                                 'technical_quality_score', 'sharpness_score', 'noise_level', 'artifact_score',
-                                'overall_aesthetic_quality']:
+                                'overall_aesthetic_quality', 'criterion_pass_rate', 'object_criteria_result']:
                         if key in mm:
                             run_dict[key] = mm[key]
                 except (json.JSONDecodeError, TypeError):
@@ -322,8 +328,8 @@ def get_single_run_with_metrics(run_id: str) -> Optional[Dict[str, Any]]:
                 try:
                     import json
                     vm = json.loads(run_dict['video_metadata'])
-                    for key in ['temporal_flickering_score', 'subject_consistency_score',
-                                'background_consistency_score', 'motion_smoothness_score',
+                    for key in ['adjacent_pixel_stability', 'whole_frame_anchored_dino_cosine',
+                                'whole_frame_adjacent_dino_cosine', 'flow_magnitude_stability',
                                 'video_aesthetic_mean', 'video_aesthetic_min', 'video_aesthetic_std']:
                         if key in vm:
                             run_dict[key] = vm[key]

@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "criteria": [
+    {
+      "id": "task",
+      "description": "Does the complete visible evidence fulfill the prompt? Action, text and spatial details require inspection. Abstain if unclear."
+    }
+  ]
+}

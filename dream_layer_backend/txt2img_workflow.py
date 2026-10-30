@@ -78,7 +78,7 @@ def transform_to_txt2img_workflow(data):
         model_name = data.get('model_name', 'juggernautXL_v8Rundiffusion.safetensors')
         
         # Check if it's a closed-source model (DALL-E, FLUX, Ideogram, Runway, Stability AI, Luma, Banana, etc.)
-        closed_source_models = ['dall-e-3', 'dall-e-2', 'flux-pro', 'flux-dev', 'ideogram-v3', 'runway-gen4', 'stability-sdxl', 'stability-sd-turbo', 'photon-1', 'photon-flash-1', 'banana-gemini']
+        closed_source_models = ['dall-e-3', 'dall-e-2', 'flux-pro', 'flux-dev', 'ideogram-v3', 'runway-gen4', 'stability-ultra', 'stability-sdxl', 'stability-sd-turbo', 'photon-1', 'photon-flash-1', 'banana-gemini']
         
         if model_name in closed_source_models:
             print(f"🎨 Using closed-source model: {model_name}")

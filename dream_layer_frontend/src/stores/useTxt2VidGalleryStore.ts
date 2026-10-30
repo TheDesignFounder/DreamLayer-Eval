@@ -1,3 +1,4 @@
+import type { HistoryVideo } from '@/types/api';
 import { create } from 'zustand';
 import { VideoResult } from '@/types/generationSettings';
 
@@ -36,7 +37,7 @@ export const useTxt2VidGalleryStore = create<Txt2VidGalleryState>((set) => ({
 
       if (data.status === 'success' && data.generations) {
         // Convert database format to VideoResult format
-        const videos: VideoResult[] = data.generations.map((gen: any) => ({
+        const videos: VideoResult[] = data.generations.map((gen: HistoryVideo) => ({
           id: gen.id,
           url: gen.url,
           filename: gen.filename,

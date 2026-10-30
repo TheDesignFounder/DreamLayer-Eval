@@ -24,76 +24,8 @@ _nltk_loaded = False
 _lemmatizer = None
 
 
-def _ensure_nltk():
-    """Lazy load NLTK and required data"""
-    global _nltk_loaded, _lemmatizer
-    if _nltk_loaded:
-        return True
-
-    try:
-        import nltk
-        from nltk.stem import WordNetLemmatizer
-
-        # Download required NLTK data
-        required_data = [
-            ('tokenizers/punkt', 'punkt'),
-            ('tokenizers/punkt_tab', 'punkt_tab'),
-            ('taggers/averaged_perceptron_tagger', 'averaged_perceptron_tagger'),
-            ('taggers/averaged_perceptron_tagger_eng', 'averaged_perceptron_tagger_eng'),
-            ('corpora/wordnet', 'wordnet')
-        ]
-
-        for resource_path, download_name in required_data:
-            try:
-                nltk.data.find(resource_path)
-            except LookupError:
-                try:
-                    nltk.download(download_name, quiet=True)
-                except Exception as e:
-                    logger.warning(f"Failed to download NLTK resource {download_name}: {e}")
-
-        _lemmatizer = WordNetLemmatizer()
-        _nltk_loaded = True
-        return True
-    except Exception as e:
-        logger.error(f"Failed to load NLTK: {e}")
-        return False
 
 
-def _ensure_yolo(config: Dict) -> bool:
-    """Lazy load YOLO model"""
-    global _yolo_model, _yolo_loaded
-    if _yolo_loaded:
-        return _yolo_model is not None
-
-    try:
-        from ultralytics import YOLO
-
-        model_name = config.get("yolo", {}).get("model", "yolov8n.pt")
-        scripts_dir = os.path.dirname(os.path.abspath(__file__))
-        model_path = os.path.join(scripts_dir, model_name)
-
-        logger.info(f"Loading YOLO model: {model_name}")
-
-        if os.path.exists(model_path):
-            _yolo_model = YOLO(model_path)
-        else:
-            # Download to scripts folder
-            original_cwd = os.getcwd()
-            try:
-                os.chdir(scripts_dir)
-                _yolo_model = YOLO(model_name)
-                logger.info(f"YOLO model downloaded to {scripts_dir}")
-            finally:
-                os.chdir(original_cwd)
-
-        _yolo_loaded = True
-        logger.info("YOLO model loaded successfully")
-        return True
-    except Exception as e:
-        logger.error(f"Failed to load YOLO model: {e}")
-        _yolo_loaded = True  # Mark as attempted
-        return False
 
 
 class CompositionMetricsCalculator:
@@ -124,58 +56,10 @@ class CompositionMetricsCalculator:
 
     # ==================== YOLO OBJECT DETECTION ====================
 
-    def extract_target_objects(self, prompt: str) -> Dict[str, Any]:
-        """Extract target objects from prompt using NLTK"""
-        if not _ensure_nltk():
-            return {"target_objects": {}, "mapped_objects": {}}
-
-        try:
-            from nltk.tokenize import word_tokenize
-            from nltk.tag import pos_tag
-
-            tokens = word_tokenize(prompt.lower())
-            pos_tags = pos_tag(tokens)
-
-            # Extract nouns
-            nouns = []
-            for word, pos in pos_tags:
-                if pos.startswith('NN'):
-                    lemmatized = _lemmatizer.lemmatize(word)
-                    nouns.append(lemmatized)
-
-            # Extract counts and objects
-            target_objects = {}
-            count_patterns = [
-                (r'(\d+)\s+(\w+)', lambda m: (int(m.group(1)), m.group(2))),
-                (r'(two|three|four|five|six|seven|eight|nine|ten)\s+(\w+)',
-                 lambda m: (self._word_to_number(m.group(1)), m.group(2))),
-                (r'a\s+(\w+)', lambda m: (1, m.group(1)))
-            ]
-
-            prompt_lower = prompt.lower()
-            for pattern, extractor in count_patterns:
-                for match in re.finditer(pattern, prompt_lower):
-                    count, obj = extractor(match)
-                    obj_lemmatized = _lemmatizer.lemmatize(obj)
-                    if obj_lemmatized in nouns:
-                        target_objects[obj_lemmatized] = target_objects.get(obj_lemmatized, 0) + count
-
-            # Add remaining nouns with count 1
-            for noun in nouns:
-                if noun not in target_objects:
-                    target_objects[noun] = 1
-
-            # Map to COCO classes
-            mapped_objects = {}
-            for obj, count in target_objects.items():
-                mapped_obj = self._map_to_coco_class(obj)
-                if mapped_obj:
-                    mapped_objects[mapped_obj] = mapped_objects.get(mapped_obj, 0) + count
-
-            return {"target_objects": target_objects, "mapped_objects": mapped_objects}
-        except Exception as e:
-            logger.error(f"Error extracting target objects: {e}")
-            return {"target_objects": {}, "mapped_objects": {}}
+    def extract_target_objects(self, prompt):
+        from research.composition import interpret
+        parsed = interpret(prompt)
+        return {**parsed, 'target_objects': parsed['criteria'], 'mapped_objects': parsed['criteria']}
 
     def _word_to_number(self, word: str) -> int:
         """Convert word numbers to integers"""
@@ -194,181 +78,37 @@ class CompositionMetricsCalculator:
                 return coco_class
         return None
 
-    def detect_objects(self, image_path: str) -> List[Dict[str, Any]]:
-        """Detect objects in image using YOLO"""
-        if not _ensure_yolo(self.config):
-            return []
+    def detect_objects(self, image_path):
+        from research.composition import detect
+        return detect(image_path, self.config.get('yolo', {}).get('model'), self.config.get('yolo', {}).get('conf_threshold', .25))[0]
 
-        if not os.path.exists(image_path):
-            logger.error(f"Image not found: {image_path}")
-            return []
+    def detect_objects_batch(self, image_paths, batch_size=16):
+        return [self.detect_objects(p) for p in image_paths]
 
+    def calculate_object_metrics(self, prompt, image_path):
+        from research.composition import interpret, detect, evaluate_criteria
+        parsed = interpret(prompt)
         try:
-            results = _yolo_model(
-                image_path,
-                conf=self.config["yolo"]["conf_threshold"],
-                iou=self.config["yolo"]["iou_threshold"],
-                max_det=self.config["yolo"]["max_detections"],
-                verbose=False
-            )
-
-            detections = []
-            for result in results:
-                if result.boxes is not None:
-                    for box in result.boxes:
-                        class_id = int(box.cls[0])
-                        confidence = float(box.conf[0])
-                        class_name = _yolo_model.names[class_id]
-                        bbox = box.xyxy[0].tolist()
-
-                        detections.append({
-                            "class_name": class_name,
-                            "confidence": confidence,
-                            "class_id": class_id,
-                            "bbox": bbox
-                        })
-
-            return detections
-        except Exception as e:
-            logger.error(f"Error detecting objects: {e}")
-            return []
-
-    def detect_objects_batch(self, image_paths: List[str], batch_size: int = 16) -> List[List[Dict[str, Any]]]:
-        """
-        Detect objects in multiple images using YOLO batch inference.
-
-        Args:
-            image_paths: List of image file paths
-            batch_size: Number of images to process at once (default: 16)
-
-        Returns:
-            List of detection lists, one per image
-        """
-        if not _ensure_yolo(self.config):
-            return [[] for _ in image_paths]
-
-        # Filter valid paths
-        valid_paths = []
-        valid_indices = []
-        for i, path in enumerate(image_paths):
-            if os.path.exists(path):
-                valid_paths.append(path)
-                valid_indices.append(i)
+            from PIL import Image
+            with Image.open(image_path) as image:
+                image.verify()
+            if not parsed['criteria']:
+                output = evaluate_criteria([], [])
             else:
-                logger.warning(f"Image not found: {path}")
-
-        if not valid_paths:
-            return [[] for _ in image_paths]
-
-        all_detections = [[] for _ in image_paths]
-
-        try:
-            # Process in batches
-            for batch_start in range(0, len(valid_paths), batch_size):
-                batch_paths = valid_paths[batch_start:batch_start + batch_size]
-                batch_indices = valid_indices[batch_start:batch_start + batch_size]
-
-                # YOLO supports batch inference natively
-                results = _yolo_model(
-                    batch_paths,
-                    conf=self.config["yolo"]["conf_threshold"],
-                    iou=self.config["yolo"]["iou_threshold"],
-                    max_det=self.config["yolo"]["max_detections"],
-                    verbose=False
-                )
-
-                # Parse results for each image in batch
-                for result, orig_idx in zip(results, batch_indices):
-                    detections = []
-                    if result.boxes is not None:
-                        for box in result.boxes:
-                            class_id = int(box.cls[0])
-                            confidence = float(box.conf[0])
-                            class_name = _yolo_model.names[class_id]
-                            bbox = box.xyxy[0].tolist()
-
-                            detections.append({
-                                "class_name": class_name,
-                                "confidence": confidence,
-                                "class_id": class_id,
-                                "bbox": bbox
-                            })
-                    all_detections[orig_idx] = detections
-
-            logger.info(f"Batch detected objects in {len(valid_paths)} images")
-            return all_detections
-
-        except Exception as e:
-            logger.error(f"Error in batch object detection: {e}")
-            return [[] for _ in image_paths]
-
-    def calculate_object_metrics(self, prompt: str, image_path: str) -> Dict[str, Any]:
-        """Calculate object detection accuracy metrics"""
-        target_data = self.extract_target_objects(prompt)
-        target_objects = target_data["mapped_objects"]
-
-        if not target_objects:
-            return {
-                "object_precision": None,
-                "object_recall": None,
-                "object_f1": None,
-                "detected_objects": {},
-                "missing_objects": {},
-                "target_objects": {}
-            }
-
-        detections = self.detect_objects(image_path)
-
-        # Count detected objects
-        detected_counts = {}
-        for detection in detections:
-            class_name = detection["class_name"]
-            detected_counts[class_name] = detected_counts.get(class_name, 0) + 1
-
-        # Calculate per-class metrics
-        per_class_metrics = {}
-        all_classes = set(target_objects.keys()) | set(detected_counts.keys())
-
-        for class_name in all_classes:
-            target_count = target_objects.get(class_name, 0)
-            detected_count = detected_counts.get(class_name, 0)
-
-            if detected_count > 0:
-                precision = min(target_count, detected_count) / detected_count
-            else:
-                precision = 1.0 if target_count == 0 else 0.0
-
-            if target_count > 0:
-                recall = min(target_count, detected_count) / target_count
-            else:
-                recall = 1.0 if detected_count == 0 else 0.0
-
-            f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
-
-            per_class_metrics[class_name] = {
-                "precision": precision, "recall": recall, "f1": f1,
-                "target": target_count, "detected": detected_count
-            }
-
-        # Macro metrics
-        if per_class_metrics:
-            macro_precision = statistics.mean([m["precision"] for m in per_class_metrics.values()])
-            macro_recall = statistics.mean([m["recall"] for m in per_class_metrics.values()])
-            macro_f1 = statistics.mean([m["f1"] for m in per_class_metrics.values()])
-        else:
-            macro_precision = macro_recall = macro_f1 = 0.0
-
-        missing = {k: v for k, v in target_objects.items() if k not in detected_counts}
-
-        return {
-            "object_precision": macro_precision,
-            "object_recall": macro_recall,
-            "object_f1": macro_f1,
-            "detected_objects": detected_counts,
-            "missing_objects": missing,
-            "target_objects": target_objects,
-            "per_class_metrics": per_class_metrics
-        }
+                weights = self.config.get('yolo', {}).get('model')
+                detections, provenance = detect(image_path, weights, self.config.get('yolo', {}).get('conf_threshold', .25))
+                classes = provenance['classes']
+                output = evaluate_criteria(parsed['criteria'], detections, vocabulary=list(classes.values()) if isinstance(classes, dict) else classes)
+                output['detector'] = provenance
+        except ImportError as exc:
+            output = {'status': 'unavailable_dependency', 'score': None, 'reason': str(exc)}
+        except Exception as exc:
+            output = {'status': 'failed_evaluation', 'score': None, 'reason': str(exc)}
+        return {'object_precision': None, 'object_recall': None, 'object_f1': None,
+                'macro_precision': None, 'macro_recall': None, 'macro_f1': None,
+                'criterion_pass_rate': output['score'], 'object_criteria_result': output,
+                'target_objects': parsed['criteria'], 'detected_objects': output.get('detected_objects', {}),
+                'missing_objects': {}, 'per_class_metrics': {}, 'metric_id': 'object_criteria', 'metric_version': '1.0.0'}
 
     # ==================== VISUAL COMPOSITION ANALYSIS ====================
 
@@ -640,127 +380,16 @@ class CompositionMetricsCalculator:
             **visual_metrics
         }
 
-    def calculate_all_metrics_batch(
-        self,
-        prompts: List[str],
-        image_paths: List[str],
-        batch_size: int = 16
-    ) -> List[Dict[str, Any]]:
-        """
-        Calculate all metrics for multiple images using batch processing.
-
-        Args:
-            prompts: List of prompts (one per image)
-            image_paths: List of image file paths
-            batch_size: Batch size for YOLO inference (default: 16)
-
-        Returns:
-            List of metric dictionaries, one per image
-        """
+    def calculate_all_metrics_batch(self, prompts, image_paths, batch_size=16):
         if len(prompts) != len(image_paths):
-            raise ValueError("prompts and image_paths must have the same length")
+            raise ValueError('prompts and image_paths must have the same length')
+        return [self.calculate_all_metrics(p, f) for p, f in zip(prompts, image_paths)]
 
-        n_images = len(image_paths)
-        if n_images == 0:
-            return []
-
-        logger.info(f"Calculating composition metrics for {n_images} images (batch_size={batch_size})")
-
-        # Step 1: Batch YOLO detection (the slow part)
-        all_detections = self.detect_objects_batch(image_paths, batch_size=batch_size)
-
-        # Step 2: Extract target objects from prompts (fast, no batching needed)
-        all_targets = [self.extract_target_objects(p) for p in prompts]
-
-        # Step 3: Calculate metrics for each image
-        results = []
-        for i, (prompt, image_path) in enumerate(zip(prompts, image_paths)):
-            # Object metrics using pre-computed detections
-            target_data = all_targets[i]
-            target_objects = target_data["mapped_objects"]
-            detections = all_detections[i]
-
-            object_metrics = self._compute_object_metrics_from_detections(
-                target_objects, detections
-            )
-
-            # Visual composition (OpenCV, fast enough without batching)
-            visual_metrics = self.calculate_visual_composition(image_path)
-
-            results.append({
-                **object_metrics,
-                **visual_metrics
-            })
-
-        logger.info(f"Completed composition metrics for {n_images} images")
-        return results
-
-    def _compute_object_metrics_from_detections(
-        self,
-        target_objects: Dict[str, int],
-        detections: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
-        """Compute object metrics from pre-computed detections"""
-        if not target_objects:
-            return {
-                "object_precision": None,
-                "object_recall": None,
-                "object_f1": None,
-                "detected_objects": {},
-                "missing_objects": {},
-                "target_objects": {}
-            }
-
-        # Count detected objects
-        detected_counts = {}
-        for detection in detections:
-            class_name = detection["class_name"]
-            detected_counts[class_name] = detected_counts.get(class_name, 0) + 1
-
-        # Calculate per-class metrics
-        per_class_metrics = {}
-        all_classes = set(target_objects.keys()) | set(detected_counts.keys())
-
-        for class_name in all_classes:
-            target_count = target_objects.get(class_name, 0)
-            detected_count = detected_counts.get(class_name, 0)
-
-            if detected_count > 0:
-                precision = min(target_count, detected_count) / detected_count
-            else:
-                precision = 1.0 if target_count == 0 else 0.0
-
-            if target_count > 0:
-                recall = min(target_count, detected_count) / target_count
-            else:
-                recall = 1.0 if detected_count == 0 else 0.0
-
-            f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
-
-            per_class_metrics[class_name] = {
-                "precision": precision, "recall": recall, "f1": f1,
-                "target": target_count, "detected": detected_count
-            }
-
-        # Macro metrics
-        if per_class_metrics:
-            macro_precision = statistics.mean([m["precision"] for m in per_class_metrics.values()])
-            macro_recall = statistics.mean([m["recall"] for m in per_class_metrics.values()])
-            macro_f1 = statistics.mean([m["f1"] for m in per_class_metrics.values()])
-        else:
-            macro_precision = macro_recall = macro_f1 = 0.0
-
-        missing = {k: v for k, v in target_objects.items() if k not in detected_counts}
-
-        return {
-            "object_precision": macro_precision,
-            "object_recall": macro_recall,
-            "object_f1": macro_f1,
-            "detected_objects": detected_counts,
-            "missing_objects": missing,
-            "target_objects": target_objects,
-            "per_class_metrics": per_class_metrics
-        }
+    def _compute_object_metrics_from_detections(self, target_objects, detections):
+        from research.composition import evaluate_criteria
+        if not isinstance(target_objects, list):
+            raise ValueError('Explicit structured criteria required; legacy count dictionaries are ambiguous')
+        return evaluate_criteria(target_objects, detections)
 
 
 # Singleton instance

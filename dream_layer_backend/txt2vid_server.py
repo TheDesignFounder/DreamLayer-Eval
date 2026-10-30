@@ -1,3 +1,6 @@
+import sys as _research_sys
+from pathlib import Path as _ResearchPath
+_research_sys.path.insert(0, str(_ResearchPath(__file__).resolve().parent.parent))
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import json
@@ -21,7 +24,7 @@ CORS(app, resources={
 })
 
 # Setup logging
-logs_dir = os.path.join(os.path.dirname(__file__), '..', 'logs')
+logs_dir = os.getenv('DREAMLAYER_LOG_DIR', os.path.join(os.path.dirname(__file__), '..', 'logs'))
 os.makedirs(logs_dir, exist_ok=True)
 logging.basicConfig(
     filename=os.path.join(logs_dir, 'txt2vid_server.log'),
@@ -31,11 +34,11 @@ logging.basicConfig(
 )
 
 output_dir, _ = get_directories()
-VIDEO_OUTPUT_DIR = os.path.join(output_dir, 'videos')
+VIDEO_OUTPUT_DIR = os.getenv('DREAMLAYER_VIDEO_OUTPUT_DIR', os.path.join(output_dir, 'videos'))
 os.makedirs(VIDEO_OUTPUT_DIR, exist_ok=True)
 
 # Create temp directory for image-to-video input images
-TEMP_IMAGES_DIR = os.path.join(output_dir, 'temp_images')
+TEMP_IMAGES_DIR = os.getenv('DREAMLAYER_TEMP_IMAGES_DIR', os.path.join(output_dir, 'temp_images'))
 os.makedirs(TEMP_IMAGES_DIR, exist_ok=True)
 
 @app.route('/api/txt2vid', methods=['POST', 'OPTIONS'])
@@ -252,7 +255,7 @@ def calculate_video_metrics():
             return jsonify({"status": "error", "message": "Missing video_url"}), 400
 
         # Check DB cache first
-        if run_id and not force_recalculate:
+        if False:  # Legacy run-only cache has no content/preprocessing identity; research cache is authoritative.
             try:
                 from data.scripts.database import DreamLayerDB
                 db = DreamLayerDB()
@@ -298,7 +301,7 @@ def calculate_video_metrics():
         metrics = calculator.compute_all(
             video_path=video_path,
             reference_path=reference_path,
-            per_frame=True
+            per_frame=True, alignment=data.get('alignment')
         )
 
         from datetime import datetime
@@ -357,48 +360,7 @@ def calculate_video_metrics():
 
 @app.route('/api/video-metrics-cache/<filename>', methods=['GET'])
 def get_video_metrics_cache(filename):
-    """Look up cached video metrics by filename (no computation)."""
-    try:
-        from data.scripts.database import DreamLayerDB
-        import json as json_lib
-        db = DreamLayerDB()
-
-        # Find run_id by filename
-        with db.get_connection() as conn:
-            cursor = conn.execute("""
-                SELECT r.run_id FROM runs r
-                WHERE r.generation_type IN ('txt2vid', 'img2vid')
-                AND r.generated_images LIKE ?
-                ORDER BY r.timestamp DESC LIMIT 1
-            """, (f'%{filename}%',))
-            row = cursor.fetchone()
-
-        if not row:
-            return jsonify({"status": "not_found"}), 404
-
-        cached = db.get_video_metrics(row['run_id'])
-        if not cached:
-            return jsonify({"status": "not_found"}), 404
-
-        # Reconstruct full metrics dict
-        metrics = {}
-        for key in ['fvd_score', 'video_ssim_mean', 'video_ssim_std',
-                     'video_psnr_mean', 'video_psnr_std',
-                     'video_lpips_mean', 'video_lpips_std']:
-            if cached.get(key) is not None:
-                metrics[key] = cached[key]
-        if cached.get('metadata'):
-            metrics.update(cached['metadata'])
-        if cached.get('per_frame_data'):
-            metrics.update(cached['per_frame_data'])
-        metrics['computed_at'] = cached.get('computed_at', '')
-        metrics['_cached'] = True
-
-        return jsonify({"status": "success", "metrics": metrics, "run_id": row['run_id']})
-
-    except Exception as e:
-        logging.error(f"Error looking up cached video metrics: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+    return jsonify({'status':'not_found','reason':'Legacy filename cache invalidated; recompute with content identity'}), 404
 
 
 @app.route('/api/calculate-all-video-metrics', methods=['POST', 'OPTIONS'])
@@ -432,7 +394,7 @@ def export_video_metrics():
             cursor = conn.execute("""
                 SELECT r.run_id, r.timestamp, r.model, r.prompt, r.generation_type,
                        r.generated_images,
-                       vm.fvd_score, vm.video_ssim_mean, vm.video_ssim_std,
+                       vm.fvd_score AS legacy_fvd_score, NULL AS fvd_score, vm.video_ssim_mean, vm.video_ssim_std,
                        vm.video_psnr_mean, vm.video_psnr_std,
                        vm.video_lpips_mean, vm.video_lpips_std,
                        vm.metadata, vm.computed_at
@@ -449,13 +411,13 @@ def export_video_metrics():
         output = io.StringIO()
         columns = [
             'run_id', 'timestamp', 'model', 'prompt', 'generation_type', 'filename',
-            'fvd_score', 'video_ssim_mean', 'video_ssim_std',
+            'fvd_score', 'legacy_fvd_score', 'video_ssim_mean', 'video_ssim_std',
             'video_psnr_mean', 'video_psnr_std',
             'video_lpips_mean', 'video_lpips_std',
-            'temporal_flickering_score', 'subject_consistency_score',
-            'background_consistency_score', 'motion_smoothness_score',
+            'adjacent_pixel_stability', 'whole_frame_anchored_dino_cosine',
+            'whole_frame_adjacent_dino_cosine', 'flow_magnitude_stability',
             'video_aesthetic_mean', 'video_aesthetic_min', 'video_aesthetic_std',
-            'computed_at'
+            'metric_version', 'legacy_metadata_json', 'computed_at'
         ]
         writer = csv.DictWriter(output, fieldnames=columns)
         writer.writeheader()
@@ -473,10 +435,12 @@ def export_video_metrics():
             if metadata:
                 if isinstance(metadata, str):
                     metadata = json_lib.loads(metadata)
-                for key in ['temporal_flickering_score', 'subject_consistency_score',
-                            'background_consistency_score', 'motion_smoothness_score',
+                for key in ['adjacent_pixel_stability', 'whole_frame_anchored_dino_cosine',
+                            'whole_frame_adjacent_dino_cosine', 'flow_magnitude_stability',
                             'video_aesthetic_mean', 'video_aesthetic_min', 'video_aesthetic_std']:
                     csv_row[key] = metadata.get(key, '')
+                csv_row['metric_version'] = metadata.get('metric_version', 'invalid_legacy_result')
+                csv_row['legacy_metadata_json'] = json_lib.dumps(metadata) if metadata.get('metric_version') != 'custom-video-v2' else ''
             writer.writerow(csv_row)
 
         from flask import Response
@@ -528,8 +492,8 @@ def compare_video_metrics():
         ]
         # Also compare quality metrics from metadata
         quality_keys = [
-            'temporal_flickering_score', 'subject_consistency_score',
-            'background_consistency_score', 'motion_smoothness_score',
+            'adjacent_pixel_stability', 'whole_frame_anchored_dino_cosine',
+            'whole_frame_adjacent_dino_cosine', 'flow_magnitude_stability',
             'video_aesthetic_mean'
         ]
 

@@ -1,0 +1,79 @@
+{
+  "started_at": "2026-10-30T06:30:30.757253+00:00",
+  "provider_calls": 0,
+  "device": "cpu",
+  "results": {
+    "clip_cosine": {
+      "status": "success",
+      "score": 0.35598236322402954,
+      "repeat_score": 0.35598236322402954,
+      "offline_repeat": true,
+      "elapsed_seconds": 5.553679438002291,
+      "provenance": {
+        "model": "openai/clip-vit-base-patch32",
+        "revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+        "snapshot_sha256": {
+          "tokenizer_config.json": "34b7336e4bee12e0a9730eaf5189f582ef3c3eea5027f65730e5717256755aad",
+          "special_tokens_map.json": "f8c0d6c39aee3f8431078ef6646567b0aba7f2246e9c54b8b99d55c22b707cbf",
+          "config.json": "b575ef3c36f2a057fa19e221650105052d61cc9c1a972ec15019c6261ec98770",
+          "tokenizer.json": "b556ac8c99757ffb677208af34bc8c6721572114111a6e0aaf5fa69ff0b8d842",
+          "merges.txt": "f526393189112391ce6f9795d4695f704121ce452c3aad1f5335cc41337eba85",
+          "pytorch_model.bin": "a63082132ba4f97a80bea76823f544493bffa8082296d62d71581a4feff1576f",
+          "vocab.json": "5047b556ce86ccaf6aa22b3ffccfc52d391ea4accdab9c2f2407da5b742d4363",
+          "preprocessor_config.json": "910e70b3956ac9879ebc90b22fb3bc8a75b6a0677814500101a4c072bd7857bd"
+        },
+        "details": {
+          "model": "openai/clip-vit-base-patch32",
+          "revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+          "token_count": 10,
+          "token_limit": 77,
+          "truncated": false,
+          "transformers": "4.44.2"
+        }
+      }
+    },
+    "object_criteria": {
+      "status": "success",
+      "score": 0.0,
+      "repeat_score": 0.0,
+      "offline_repeat": true,
+      "elapsed_seconds": 3.1725352200010093,
+      "provenance": {
+        "weights_source": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8n.pt",
+        "weights_sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36",
+        "vocabulary_size": 80,
+        "criteria": [
+          {
+            "id": "object-1",
+            "kind": "presence",
+            "entity": "dog",
+            "count_mode": "minimum",
+            "minimum": 1,
+            "maximum": null,
+            "source_span": [
+              2,
+              5
+            ],
+            "source_text": "dog",
+            "status": "success",
+            "label": "fail",
+            "detected": 0
+          }
+        ],
+        "detected_objects": {
+          "sports ball": 1
+        }
+      }
+    }
+  },
+  "limitation": "Generated shapes exercise inference and provenance, not semantic accuracy or model quality.",
+  "fixture_sha256": "90c4fede6d82388e4d4dd327a4e6b76fe5efda317d11850617c89cdcbdb3c0fd",
+  "dependencies": {
+    "torch": "2.2.2",
+    "torchvision": "0.17.2",
+    "transformers": "4.44.2",
+    "ultralytics": "8.3.0",
+    "Pillow": "11.3.0",
+    "numpy": "1.26.4"
+  }
+}

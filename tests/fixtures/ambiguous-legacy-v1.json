@@ -1,0 +1,24 @@
+{
+  "description": "Hand-authored old result whose opaque preprocessing hash cannot identify either frozen threshold configuration. Does not use the legacy_run helper or evaluator implementation to manufacture results.",
+  "metrics": [
+    {"id": "object_criteria", "weights": "unavailable-legacy-weights.pt", "threshold": 0.2},
+    {"id": "object_criteria", "weights": "unavailable-legacy-weights.pt", "threshold": 0.8}
+  ],
+  "result": {
+    "schema_version": 1,
+    "kind": "result",
+    "created_at": "2025-01-01T00:00:00+00:00",
+    "metric_id": "object_criteria",
+    "metric_version": "0.9.0-opaque-fixture",
+    "scope": "criterion",
+    "status": "success",
+    "score": 0.5,
+    "reference_hash": null,
+    "implementation": {"name": "independent-fixture", "version": "0.9.0"},
+    "weights": "unavailable-legacy-weights.pt",
+    "preprocessing_hash": "4141414141414141414141414141414141414141414141414141414141414141",
+    "units": "unitless",
+    "direction": "higher",
+    "elapsed_ms": 0
+  }
+}

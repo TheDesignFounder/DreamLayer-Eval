@@ -1,0 +1,78 @@
+import { test, expect } from '@playwright/test';
+import path from 'node:path';
+import { writeFileSync } from 'node:fs';
+import { api, artifactPath } from './artifacts';
+
+const root=path.resolve('..');
+const base=api+'/api/research';
+
+test('review fixes: criteria preview, failed attempts, reconciliation, comparisons, blinded export and replay', async ({page,request}) => {
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+  const rubric={version:'browser-review-1',criteria:[{id:'task',description:'Visible task fulfillment'}]};
+  const config={schema_version:1,name:'Review fixes '+Date.now(),models:['fixture'],prompts:[{id:'p',text:'two red cars',group_id:'p',split:'exploratory'}],
+    assets:[{path:path.join(root,'.research/fixtures/zero café.png'),prompt_id:'p',model:'fixture'}],metrics:[{id:'pixel_luminance'},{id:'vqascore'}],
+    judges:[{provider:'synthetic',model:'deliberately-invalid-fixture',rubric,synthetic_response:{labels:{bad:'pass'},explanation:'Malformed fixture',evidence:[]}}]};
+  await page.goto('/research');
+  await page.getByLabel('Experiment configuration, including editable criteria').fill(JSON.stringify(config));
+  await page.getByRole('button',{name:'Preview criteria',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('Interpreted criteria added');
+  const preview=JSON.parse(await page.getByLabel('Experiment configuration, including editable criteria').inputValue());
+  expect(preview.prompts[0].criteria[0].minimum).toBe(2);
+  preview.prompts[0].criteria[0].researcher_note='Reviewed exact count';
+  await page.getByLabel('Experiment configuration, including editable criteria').fill(JSON.stringify(preview));
+  await page.getByRole('button',{name:'Create experiment',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('Configuration frozen');
+  const eid=await page.getByLabel('Experiment',{exact:true}).inputValue();
+  await page.getByRole('button',{name:'Run / resume',exact:true}).click();
+  await expect(page.getByTestId('job-state')).toContainText('complete');
+  let detail=await (await request.get(`${base}/experiments/${eid}`)).json();
+  expect(detail.experiment.config.prompts[0].criteria[0].researcher_note).toBe('Reviewed exact count');
+  const originalFailure=detail.records.find((r:{kind:string;status:string})=>r.kind==='result' && r.status==='unavailable_dependency');
+  expect(originalFailure).toBeTruthy();
+  await page.getByRole('button',{name:'Rerun failed metrics',exact:true}).click();
+  await expect.poll(async()=>{
+    detail=await (await request.get(`${base}/experiments/${eid}`)).json();
+    return detail.records.filter((r:{kind:string})=>r.kind==='result').length;
+  }).toBe(3);
+  expect(detail.records.find((r:{supersedes?:string})=>r.supersedes===originalFailure.id)).toBeTruthy();
+  await expect(page.getByRole('cell').filter({hasText:'1 · Superseded'})).toHaveCount(1);
+  await page.getByText('Recover a failed judge assessment',{exact:true}).click();
+  let calls=detail.records.filter((r:{kind:string;phase:string})=>r.kind==='judge_call' && r.phase==='request');
+  await page.getByLabel('Judge request ID',{exact:true}).fill(calls[0].id);
+  await page.getByLabel('Recovery note',{exact:true}).fill('Browser synthetic fixture retry');
+  await page.getByRole('button',{name:'Retry judge',exact:true}).click();
+  await expect(page.getByTestId('analysis-report')).toContainText('parse_failure');
+  detail=await (await request.get(`${base}/experiments/${eid}`)).json();
+  calls=detail.records.filter((r:{kind:string;phase:string})=>r.kind==='judge_call' && r.phase==='request');
+  expect(calls).toHaveLength(2);
+  await page.getByLabel('Judge request ID',{exact:true}).fill(calls[1].id);
+  await page.getByLabel('Reconciliation',{exact:true}).selectOption('completed');
+  await page.getByLabel('Recovered response JSON').fill(JSON.stringify({labels:{task:'pass'},explanation:'Operator supplied fixture for reconciliation test',evidence:[]}));
+  await page.getByRole('button',{name:'Save reconciliation',exact:true}).click();
+  await expect(page.getByTestId('analysis-report')).toContainText('recovered_response');
+  await page.getByRole('button',{name:'Use first judge rubric',exact:true}).click();
+  const rater='review-fixes-'+eid;
+  await page.getByLabel('Rater ID',{exact:true}).fill(rater);
+  await page.getByRole('button',{name:'Create review assignments',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('Assignments saved');
+  await page.getByRole('link',{name:'Open blinded review',exact:true}).click();
+  await page.getByLabel('Criterion task').selectOption('fail');
+  await page.getByRole('button',{name:'Save annotation',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('Independent annotation saved');
+  await page.goto('/research');await page.getByLabel('Experiment',{exact:true}).selectOption(eid);
+  await page.getByRole('button',{name:'Compare metrics, judges and humans',exact:true}).click();
+  await expect(page.getByTestId('analysis-report')).toContainText('"fp": 1');
+  await expect(page.getByLabel('Metric judge human comparisons')).toBeVisible();
+  const blind=await (await request.get(`${base}/experiments/${eid}/annotations?blinded=1`)).text();expect(blind).not.toContain(rater);
+  const joined=await (await request.get(`${base}/experiments/${eid}/comparison-rows`)).json();expect(joined.judge_rows[0].operator_reconciled).toBe(true);
+  await page.getByLabel('Analysis labels').selectOption('adjudicated');
+  await page.getByRole('button',{name:'Analyze',exact:true}).click();
+  await expect(page.getByTestId('analysis-report')).toContainText('"annotations": 1');
+  const downloadEvent=page.waitForEvent('download');await page.getByRole('link',{name:'Export experiment',exact:true}).click();
+  const bundle=artifactPath('review-fixes', 'browser-experiment.zip');await (await downloadEvent).saveAs(bundle);
+  await page.getByLabel('Reload bundle').setInputFiles(bundle);await expect(page.getByRole('status')).toContainText('Bundle verified and imported');
+  await page.getByRole('button',{name:'Analyze',exact:true}).click();await expect(page.getByTestId('analysis-report')).toContainText('"superseded_evaluations": 1');
+  await page.screenshot({path:artifactPath('review-fixes', 'workbench.png'),fullPage:true});
+  writeFileSync(artifactPath('review-fixes', 'browser-result.json'),JSON.stringify({experiment_id:eid,errors,joined},null,2));
+  expect(errors).toEqual([]);
+});

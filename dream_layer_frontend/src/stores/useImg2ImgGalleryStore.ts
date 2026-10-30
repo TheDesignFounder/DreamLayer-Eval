@@ -1,3 +1,4 @@
+import type { HistoryImage } from '@/types/api';
 import { create } from 'zustand';
 import { ImageResult, CoreGenerationSettings, defaultCoreSettings } from '@/types/generationSettings';
 
@@ -12,14 +13,14 @@ interface Img2ImgGalleryState {
   currentImageIndex: number;
   inputImage: InputImage | null;
   coreSettings: CoreGenerationSettings;
-  customWorkflow: any | null;
+  customWorkflow: import('@/types/api').CustomWorkflow | null;
   addImages: (newImages: ImageResult[]) => void;
   clearImages: () => void;
   removeImage: (id: string) => void;
   setLoading: (loading: boolean) => void;
   setCurrentImageIndex: (index: number) => void;
   setInputImage: (image: InputImage | null) => void;
-  setCustomWorkflow: (workflow: any | null) => void;
+  setCustomWorkflow: (workflow: import('@/types/api').CustomWorkflow | null) => void;
   updateCoreSettings: (updates: Partial<CoreGenerationSettings>) => void;
   handlePromptChange: (value: string, isNegative?: boolean) => void;
   handleSamplingSettingsChange: (sampler: string, scheduler: string, steps: number, cfg: number) => void;
@@ -128,7 +129,7 @@ export const useImg2ImgGalleryStore = create<Img2ImgGalleryState>((set) => ({
 
       if (data.status === 'success' && data.generations) {
         // Convert database format to ImageResult format
-        const images: ImageResult[] = data.generations.map((gen: any) => ({
+        const images: ImageResult[] = data.generations.map((gen: HistoryImage) => ({
           id: gen.id,
           url: gen.url,
           prompt: gen.prompt || '',

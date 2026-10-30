@@ -232,3 +232,21 @@ dream_layer_backend/dream_layer_backend_utils/yolov8n.pt
 
 # Local Claude settings
 .claude/settings.local.json
+
+# Research environments and private local research state
+.venv-research*/
+.research/
+.validation-local/
+.venv-research-smoke/
+*.sqlite*
+*.pt
+*.pth
+*.safetensors
+*.sqlite3*
+*.pre-research.bak
+node_modules/
+dream_layer_frontend/test-results/
+# Source modules under data/scripts are code, not generated data.
+!dream_layer_backend/data/
+dream_layer_backend/data/*
+!dream_layer_backend/data/scripts/

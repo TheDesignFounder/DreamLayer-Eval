@@ -1,0 +1,51 @@
+{
+  "status": "passed",
+  "checks": [
+    {
+      "input_shape": [
+        3,
+        4,
+        32,
+        48
+      ],
+      "output_shape": [
+        3,
+        4,
+        224,
+        224
+      ],
+      "max_difference": 0.0
+    },
+    {
+      "input_shape": [
+        3,
+        4,
+        48,
+        32
+      ],
+      "output_shape": [
+        3,
+        4,
+        224,
+        224
+      ],
+      "max_difference": 0.0
+    },
+    {
+      "input_shape": [
+        3,
+        4,
+        32,
+        32
+      ],
+      "output_shape": [
+        3,
+        4,
+        224,
+        224
+      ],
+      "max_difference": 0.0
+    }
+  ],
+  "scope": "Tensor preprocessing parity only; no I3D model inference"
+}

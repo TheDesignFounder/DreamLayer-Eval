@@ -1,3 +1,6 @@
+import sys as _research_sys
+from pathlib import Path as _ResearchPath
+_research_sys.path.insert(0, str(_ResearchPath(__file__).resolve().parent.parent))
 """
 Enhanced Run Registry with Database Integration
 Saves new runs to database while maintaining API compatibility

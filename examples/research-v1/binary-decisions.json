@@ -1,0 +1,18 @@
+[
+  {
+    "human": "fail",
+    "judge": "pass"
+  },
+  {
+    "human": "fail",
+    "judge": "fail"
+  },
+  {
+    "human": "pass",
+    "judge": "uncertain"
+  },
+  {
+    "human": "pass",
+    "judge": "pass"
+  }
+]

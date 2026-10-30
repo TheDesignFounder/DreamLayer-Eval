@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "name": "Video observation policy template v1",
+  "purpose": "Exercise infrastructure with synthetic fixtures",
+  "models": [
+    "fixture-black",
+    "fixture-white"
+  ],
+  "repetitions": 1,
+  "concurrency": 2,
+  "prompts": [
+    {
+      "id": "video",
+      "text": "A white square moves continuously",
+      "group_id": "motion",
+      "split": "test"
+    }
+  ],
+  "assets": [
+    {
+      "path": "tests/fixtures/research/moving.webm",
+      "prompt_id": "video",
+      "model": "fixture-black"
+    },
+    {
+      "path": "tests/fixtures/research/one frame.webm",
+      "prompt_id": "video",
+      "model": "fixture-white"
+    }
+  ],
+  "metrics": [
+    {
+      "id": "adjacent_pixel_stability"
+    }
+  ],
+  "judges": [
+    {
+      "provider": "synthetic",
+      "model": "synthetic-fixture-v1",
+      "protocol": "sparse",
+      "sparse_frames": 4,
+      "dense_frames": 16,
+      "budget": {
+        "calls": 2,
+        "frames": 40,
+        "tokens": 1000000
+      },
+      "rubric": {
+        "version": "1",
+        "criteria": [
+          {
+            "id": "task",
+            "description": "Does the complete visible evidence fulfill the prompt? Action, text and spatial details require inspection. Abstain if unclear."
+          }
+        ]
+      }
+    },
+    {
+      "provider": "synthetic",
+      "model": "synthetic-fixture-v1",
+      "protocol": "dense",
+      "sparse_frames": 4,
+      "dense_frames": 16,
+      "budget": {
+        "calls": 2,
+        "frames": 40,
+        "tokens": 1000000
+      },
+      "rubric": {
+        "version": "1",
+        "criteria": [
+          {
+            "id": "task",
+            "description": "Does the complete visible evidence fulfill the prompt? Action, text and spatial details require inspection. Abstain if unclear."
+          }
+        ]
+      }
+    },
+    {
+      "provider": "synthetic",
+      "model": "synthetic-fixture-v1",
+      "protocol": "two_pass",
+      "sparse_frames": 4,
+      "dense_frames": 16,
+      "budget": {
+        "calls": 2,
+        "frames": 40,
+        "tokens": 1000000
+      },
+      "rubric": {
+        "version": "1",
+        "criteria": [
+          {
+            "id": "task",
+            "description": "Does the complete visible evidence fulfill the prompt? Action, text and spatial details require inspection. Abstain if unclear."
+          }
+        ]
+      }
+    }
+  ]
+}

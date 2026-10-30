@@ -1,0 +1,10 @@
+Flask==3.1.2
+flask-cors==6.0.1
+numpy==1.26.4
+scipy==1.15.3
+Pillow==11.3.0
+requests==2.32.5
+openpyxl==3.1.5
+av==16.0.1
+pytest==8.4.2
+pytest-mock==3.15.1

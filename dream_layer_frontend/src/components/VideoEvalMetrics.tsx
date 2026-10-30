@@ -15,13 +15,13 @@ interface VideoMetrics {
   video_psnr_per_frame?: number[];
   video_lpips_per_frame?: number[];
   // Phase 2: No-reference quality metrics
-  temporal_flickering_score?: number;
+  adjacent_pixel_stability?: number;
   per_frame_flicker?: number[];
-  subject_consistency_score?: number;
+  whole_frame_anchored_dino_cosine?: number;
   per_frame_subject_sim?: number[];
-  background_consistency_score?: number;
+  whole_frame_adjacent_dino_cosine?: number;
   per_frame_bg_sim?: number[];
-  motion_smoothness_score?: number;
+  flow_magnitude_stability?: number;
   per_frame_motion?: number[];
   video_aesthetic_mean?: number;
   video_aesthetic_min?: number;
@@ -139,10 +139,10 @@ const VideoEvalMetrics: React.FC<VideoEvalMetricsProps> = ({
   );
 
   const hasQualityMetrics = metrics && (
-    metrics.temporal_flickering_score !== undefined ||
-    metrics.subject_consistency_score !== undefined ||
-    metrics.background_consistency_score !== undefined ||
-    metrics.motion_smoothness_score !== undefined ||
+    metrics.adjacent_pixel_stability !== undefined ||
+    metrics.whole_frame_anchored_dino_cosine !== undefined ||
+    metrics.whole_frame_adjacent_dino_cosine !== undefined ||
+    metrics.flow_magnitude_stability !== undefined ||
     metrics.video_aesthetic_mean !== undefined
   );
 
@@ -233,27 +233,27 @@ const VideoEvalMetrics: React.FC<VideoEvalMetricsProps> = ({
                 <div>
                   <div className="font-semibold mb-1">Video Quality:</div>
                   <div className="space-y-1 text-muted-foreground">
-                    {metrics.temporal_flickering_score !== undefined && (
+                    {metrics.adjacent_pixel_stability !== undefined && (
                       <div>
-                        <strong>Temporal Flickering:</strong> {formatScore(metrics.temporal_flickering_score)}
+                        <strong>Adjacent pixel stability (custom):</strong> {formatScore(metrics.adjacent_pixel_stability)}
                         <span className="opacity-60"> (higher is better, 1.0 = no flicker)</span>
                       </div>
                     )}
-                    {metrics.subject_consistency_score !== undefined && (
+                    {metrics.whole_frame_anchored_dino_cosine !== undefined && (
                       <div>
-                        <strong>Subject Consistency:</strong> {formatScore(metrics.subject_consistency_score)}
+                        <strong>Whole-frame anchored DINO cosine:</strong> {formatScore(metrics.whole_frame_anchored_dino_cosine)}
                         <span className="opacity-60"> (higher is better)</span>
                       </div>
                     )}
-                    {metrics.background_consistency_score !== undefined && (
+                    {metrics.whole_frame_adjacent_dino_cosine !== undefined && (
                       <div>
-                        <strong>Background Consistency:</strong> {formatScore(metrics.background_consistency_score)}
+                        <strong>Whole-frame adjacent DINO cosine:</strong> {formatScore(metrics.whole_frame_adjacent_dino_cosine)}
                         <span className="opacity-60"> (higher is better)</span>
                       </div>
                     )}
-                    {metrics.motion_smoothness_score !== undefined && (
+                    {metrics.flow_magnitude_stability !== undefined && (
                       <div>
-                        <strong>Motion Smoothness:</strong> {formatScore(metrics.motion_smoothness_score)}
+                        <strong>Flow magnitude stability (custom):</strong> {formatScore(metrics.flow_magnitude_stability)}
                         <span className="opacity-60"> (higher is better)</span>
                       </div>
                     )}
@@ -303,7 +303,7 @@ const VideoEvalMetrics: React.FC<VideoEvalMetricsProps> = ({
                         </div>
                       )}
 
-                      {/* Subject & Background Consistency */}
+                      {/* Subject & Whole-frame adjacent DINO cosine */}
                       {((metrics.per_frame_subject_sim && metrics.per_frame_subject_sim.length > 0) ||
                         (metrics.per_frame_bg_sim && metrics.per_frame_bg_sim.length > 0)) && (
                         <div>

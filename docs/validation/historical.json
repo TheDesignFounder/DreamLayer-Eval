@@ -1,0 +1,21 @@
+{
+  "status": "historical evidence, not rerun in this release pass",
+  "independent_review_rounds": 4,
+  "last_review_python_tests_per_environment": 163,
+  "last_review_browser_tests": 4,
+  "prior_raw_artifacts_archived": 202,
+  "all_archived_hashes_preserved": true,
+  "legacy_bundle_sha256": "584a1774f820e7325d0c5cd54d570bed38de5b48ea0250093e86d87d624274cf",
+  "earlier_executions": [
+    "Real pretrained Inception extraction on CPU",
+    "Reconstructed-schema migration and backup checks",
+    "Historical recovery inventory"
+  ],
+  "still_not_verified": [
+    "Migration of an original historical runtime database"
+  ],
+  "unrecovered_artifacts": [
+    "Initial validation screenshot",
+    "Initial validation HTML report"
+  ]
+}

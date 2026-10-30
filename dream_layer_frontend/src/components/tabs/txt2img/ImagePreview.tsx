@@ -1,3 +1,4 @@
+import type { GeneratedGrid } from '@/types/api';
 import React, { useState, useEffect } from 'react';
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import EvalMetrics from '@/components/EvalMetrics';
 
 interface ImagePreviewProps {
   onTabChange: (tabId: string) => void;
-  grids?: any[];
+  grids?: GeneratedGrid[];
 }
 
 const LoadingAnimation = () => (
@@ -41,27 +42,18 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ onTabChange, grids = [] }) 
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
   const [currentMetrics, setCurrentMetrics] = useState<EvalMetricsData | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
+  const [clipRevision, setClipRevision] = useState('');
+  const [detectorWeights, setDetectorWeights] = useState('');
 
   const currentImage = images[currentImageIndex] || images[0];
   const maxThumbnails = 5;
   const totalPages = Math.ceil(images.length / maxThumbnails);
   const currentPage = Math.floor(thumbnailStartIndex / maxThumbnails) + 1;
 
-  // Auto-load cached metrics when switching images
+  // Filename-only legacy caches cannot identify the evaluator or prompt.
   useEffect(() => {
     setCurrentMetrics(null);
-    if (!currentImage) return;
-    const filename = currentImage.url?.split('/').pop();
-    if (!filename) return;
-    fetch(`http://localhost:5002/api/image-metrics-cache/${encodeURIComponent(filename)}`)
-      .then(res => res.json())
-      .then(result => {
-        if (result.status === 'success' && result.metrics) {
-          setCurrentMetrics(result.metrics);
-        }
-      })
-      .catch(() => {});
-  }, [currentImageIndex]);
+  }, [currentImage?.id, clipRevision, detectorWeights]);
 
   const handleDownload = async (format: 'png' | 'zip') => {
     if (!currentImage) return;
@@ -274,7 +266,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ onTabChange, grids = [] }) 
     if (!currentImage?.settings) return 'No settings available';
     
     const settings = currentImage.settings;
-    const settingsAny = settings as any; // Type assertion for additional properties
+    const settingsAny = settings as typeof settings & { model_hash?: string }; // Type assertion for additional properties
     return `Prompt: ${currentImage.prompt || 'N/A'}
 
 Negative prompt: ${currentImage.negativePrompt || 'N/A'}
@@ -287,9 +279,7 @@ Size: ${settings.width || 'N/A'}x${settings.height || 'N/A'}
 Model hash: ${settingsAny.model_hash || 'N/A'}
 Model: ${settings.model_name || 'N/A'}
 Denoising strength: ${settings.denoising_strength || 'N/A'}
-Version: v1.6.0
-Networks not found: add-detail-xl, Double_Exposure
-Time taken: 31.1 sec.`;
+Provider revision and measured latency: unavailable`;
   };
 
   return (
@@ -423,15 +413,7 @@ Time taken: 31.1 sec.`;
                 <Download className="w-3 h-3 mr-1" />
                 PNG
               </Button>
-              {false && <Button 
-                variant="outline" 
-                size="sm" 
-                className="text-xs h-8"
-                onClick={() => handleDownload('zip')}
-              >
-                <Download className="w-3 h-3 mr-1" />
-                ZIP
-              </Button>}
+              
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -536,6 +518,11 @@ Time taken: 31.1 sec.`;
           <div className="border-t border-border"></div>
 
           {/* Evaluation Metrics Section */}
+          <details className="text-sm space-y-2"><summary>Evaluation settings</summary>
+            <p>Use provisioned local models. Leave blank to use server settings. Missing models remain explicitly unavailable.</p>
+            <label className="block">Pinned CLIP revision <input aria-label="Pinned CLIP revision" className="w-full border bg-background p-2" value={clipRevision} onChange={e => setClipRevision(e.target.value)} /></label>
+            <label className="block">Detector weights path <input aria-label="Detector weights path" className="w-full border bg-background p-2" value={detectorWeights} onChange={e => setDetectorWeights(e.target.value)} /></label>
+          </details>
           <EvalMetrics
             imageId={currentImage.id}
             imagePath={currentImage.url}
@@ -550,7 +537,12 @@ Time taken: 31.1 sec.`;
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     image_url: currentImage.url,
-                    prompt: currentImage.prompt || ''
+                    prompt: currentImage.prompt || '',
+                    rerun_failed: true,
+                    evaluator_settings: {
+                      clip_cosine: clipRevision ? { revision: clipRevision } : {},
+                      object_criteria: detectorWeights ? { weights: detectorWeights } : {}
+                    }
                   })
                 });
                 const result = await response.json();

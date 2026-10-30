@@ -102,7 +102,7 @@ const Txt2VidPage: React.FC<Txt2VidPageProps> = ({ selectedModel, onTabChange })
       setLoading(true);
 
       // Prepare the request data based on model
-      const requestData: any = {
+      const requestData: Record<string, unknown> = {
         prompt: coreSettings.prompt,
         provider: coreSettings.model  // 'luma' or 'runway'
       };
@@ -266,14 +266,14 @@ const Txt2VidPage: React.FC<Txt2VidPageProps> = ({ selectedModel, onTabChange })
               audio={coreSettings.audio}
               inputImage={coreSettings.input_image}
               onModelChange={(model) => updateCoreSettings({ model })}
-              onLumaModelChange={(lumaModel) => updateCoreSettings({ luma_model: lumaModel as 'ray-1-6' })}
-              onAspectRatioChange={(aspectRatio) => updateCoreSettings({ aspect_ratio: aspectRatio as any })}
+              onLumaModelChange={(lumaModel) => updateCoreSettings({ luma_model: lumaModel as typeof coreSettings.luma_model })}
+              onAspectRatioChange={(aspectRatio) => updateCoreSettings({ aspect_ratio: aspectRatio as typeof coreSettings.aspect_ratio })}
               onLoopChange={(loop) => updateCoreSettings({ loop })}
-              onResolutionChange={(resolution) => updateCoreSettings({ resolution: resolution as any })}
+              onResolutionChange={(resolution) => updateCoreSettings({ resolution: resolution as typeof coreSettings.resolution })}
               onRunwayModeChange={(runwayMode) => updateCoreSettings({ runway_mode: runwayMode })}
-              onRunwayModelChange={(runwayModel) => updateCoreSettings({ runway_model: runwayModel as any })}
-              onRatioChange={(ratio) => updateCoreSettings({ ratio: ratio as any })}
-              onDurationChange={(duration) => updateCoreSettings({ duration })}
+              onRunwayModelChange={(runwayModel) => updateCoreSettings({ runway_model: runwayModel as typeof coreSettings.runway_model })}
+              onRatioChange={(ratio) => updateCoreSettings({ ratio: ratio as typeof coreSettings.ratio })}
+              onDurationChange={(duration) => updateCoreSettings({ duration: duration as typeof coreSettings.duration })}
               onSeedChange={(seed) => updateCoreSettings({ seed })}
               onAudioChange={(audio) => updateCoreSettings({ audio })}
               onInputImageChange={(image) => updateCoreSettings({ input_image: image })}

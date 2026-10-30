@@ -156,7 +156,9 @@ class TestFidIntegration:
         
         assert isinstance(metrics, dict)
         assert metrics['clip_score_mean'] == 0.8
-        assert metrics['fid_score'] == 28.5
+        assert metrics['fid_score'] is None
+        assert metrics['legacy_fid_score'] == 28.5
+        assert metrics['fid_status'] == 'invalid_legacy_result'
     
     def test_get_runs_without_clip_score(self):
         """Test finding runs without ClipScore"""
@@ -212,9 +214,7 @@ class TestFidIntegration:
         runs_without_fid = self.queries.get_runs_without_fid_score()
         run_ids_without_fid = [run['run_id'] for run in runs_without_fid]
         
-        assert run_without_metrics in run_ids_without_fid
-        assert run_with_clip_only in run_ids_without_fid
-        assert run_with_fid not in run_ids_without_fid
+        assert run_ids_without_fid == []  # Dataset FID is never pending per run.
     
     def test_get_runs_with_metrics(self):
         """Test retrieving runs with metrics included"""
@@ -233,7 +233,8 @@ class TestFidIntegration:
         assert run['run_id'] == run_id
         assert 'metrics' in run
         assert run['metrics']['clip_score_mean'] == 0.85
-        assert run['metrics']['fid_score'] == 22.3
+        assert run['metrics']['fid_score'] is None
+        assert run['metrics']['legacy_fid_score'] == 22.3
     
     def test_get_metrics_summary(self):
         """Test metrics summary statistics"""
@@ -272,12 +273,11 @@ class TestFidIntegration:
         assert clip_summary['maximum'] == 0.8
         
         # Check FID summary
-        assert 'fid_score' in summary
-        fid_summary = summary['fid_score']
+        assert 'legacy_fid_score' in summary
+        fid_summary = summary['legacy_fid_score']
         assert fid_summary['count'] == 3  # run1, run2, run4
-        assert fid_summary['average'] == pytest.approx(31.67, abs=0.1)
-        assert fid_summary['minimum'] == 25.0
-        assert fid_summary['maximum'] == 40.0
+        assert 'average' not in fid_summary
+        assert fid_summary['status'] == 'invalid_legacy_result'
     
     def test_csv_export_format(self):
         """Test CSV export includes both metrics"""
@@ -295,45 +295,27 @@ class TestFidIntegration:
         row = csv_data[0]
         assert row['run_id'] == run_id
         assert row['clip_score_mean'] == 0.72
-        assert row['fid_score'] == 33.8
+        assert row['fid_score'] is None
+        assert row['legacy_fid_score'] == 33.8
 
 class TestFidCalculator:
     """Test FID calculator functionality"""
     
-    @patch('dream_layer_backend.data.scripts.fid_integration.torch')
-    @patch('dream_layer_backend.data.scripts.fid_integration.FrechetInceptionDistance')
-    def test_fid_calculator_initialization(self, mock_fid, mock_torch):
-        """Test FID calculator initializes correctly"""
+    def test_fid_calculator_initialization(self):
         from fid_integration import DatabaseFidCalculator
-        
-        # Mock successful initialization
-        mock_fid.return_value = Mock()
-        
         calculator = DatabaseFidCalculator()
-        
-        # Should attempt to initialize FID metric
-        mock_fid.assert_called_once_with(feature=2048, normalize=True)
-    
-    def test_dataset_stats_loader(self):
-        """Test dataset statistics loading"""
+        assert calculator.status == 'not_applicable'
+        assert calculator.calculate_for_run('single-output') is None
+        assert calculator.calculate_batch()['success'] == 0
+
+    def test_dataset_stats_loader(self, tmp_path):
         from dream_layer_backend.datasets.dataset_utils import DatasetStatsLoader
-        
-        loader = DatasetStatsLoader()
-        
-        # Test available datasets
-        available = loader.get_available_datasets()
-        assert isinstance(available, list)
-        
-        # Test CIFAR-10 stats creation
-        success = loader.create_cifar10_stats()
-        assert success
-        
-        # Test loading created stats
-        stats = loader.load_stats('cifar10')
-        if stats:
-            mu, sigma = stats
-            assert mu.shape == (2048,)
-            assert sigma.shape == (2048, 2048)
+        loader = DatasetStatsLoader(tmp_path)
+        assert loader.get_available_datasets() == []
+        with pytest.raises(ValueError, match='Automatic CIFAR'):
+            loader.create_cifar10_stats()
+        with pytest.raises(ValueError, match='without provenance'):
+            loader.load_stats('cifar10')
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

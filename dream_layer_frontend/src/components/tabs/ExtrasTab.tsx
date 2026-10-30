@@ -70,7 +70,7 @@ const ExtrasTab = () => {
     }
   };
 
-  const handleGridSettingChange = (key: string, value: any) => {
+  const handleGridSettingChange = (key: string, value: unknown) => {
     setGridSettings(prev => ({
       ...prev,
       [key]: value

@@ -1,0 +1,4 @@
+# Separate environment on a platform supported by upstream torch>=2.7.
+# Apache-2.0 upstream code; each selected checkpoint has its own model license.
+# Do not merge this environment into the Intel feature-smoke environment.
+t2v-metrics @ git+https://github.com/linzhiqiu/t2v_metrics.git@6ecb74f92028f42c7e64546d3a71e98c8c73068f

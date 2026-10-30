@@ -12,7 +12,9 @@ interface EvalMetricsProps {
     clip_score_std?: number;
     clip_score_max?: number;
     clip_score_min?: number;
-    fid_score?: number;
+    fid_score?: number | null;
+    criterion_pass_rate?: number | null;
+    object_criteria_result?: { status: string; reason?: string };
     // Object Detection Metrics (YOLO)
     object_precision?: number;
     object_recall?: number;
@@ -24,7 +26,7 @@ interface EvalMetricsProps {
     rule_of_thirds_score?: number;
     symmetry_score?: number;
     balance_score?: number;
-    // Aesthetic Quality Metrics (Phase 5)
+    // Aesthetic predictor / custom heuristics Metrics (Phase 5)
     aesthetics_score?: number;  // LAION aesthetic score (1-10)
     color_harmony_score?: number;
     saturation_balance?: number;
@@ -157,29 +159,22 @@ const EvalMetrics: React.FC<EvalMetricsProps> = ({
               {/* CLIP Score */}
               {metrics.clip_score_mean !== undefined && (
                 <div>
-                  <div className="font-semibold mb-1">CLIP Score (Text-Image Alignment):</div>
+                  <div className="font-semibold mb-1">CLIP cosine similarity (−1 to 1):</div>
                   <div className="text-muted-foreground">
                     <strong>Mean:</strong> {formatScore(metrics.clip_score_mean)}
                   </div>
                 </div>
               )}
 
-              {/* FID Score */}
-              {metrics.fid_score !== undefined && (
-                <div>
-                  <div className="font-semibold mb-1">FID Score (Image Quality):</div>
-                  <div className="text-muted-foreground">
-                    {formatScore(metrics.fid_score, 2)} <span className="opacity-60">(lower is better)</span>
-                  </div>
-                </div>
-              )}
+              <p>FID is a distribution metric. Select generated and reference sets in the Research workbench.</p>
+              {metrics.object_criteria_result && <div><strong>Detected object criteria:</strong> {formatScore(metrics.criterion_pass_rate)} · {metrics.object_criteria_result.status}<p>{metrics.object_criteria_result.reason}</p></div>}
 
               {/* Object Detection Metrics (YOLO) */}
               {(metrics.object_precision !== undefined ||
                 metrics.object_recall !== undefined ||
                 metrics.object_f1 !== undefined) && (
                 <div>
-                  <div className="font-semibold mb-1">Object Detection (Prompt Accuracy):</div>
+                  <div className="font-semibold mb-1">Legacy detector count metrics (not overall task accuracy):</div>
                   <div className="space-y-1 text-muted-foreground">
                     {metrics.object_f1 !== undefined && (
                       <div>
@@ -242,13 +237,13 @@ const EvalMetrics: React.FC<EvalMetricsProps> = ({
                 </div>
               )}
 
-              {/* Aesthetic Quality Metrics */}
+              {/* Aesthetic predictor / custom heuristics Metrics */}
               {(metrics.aesthetics_score !== undefined ||
                 metrics.color_harmony_score !== undefined ||
                 metrics.technical_quality_score !== undefined ||
                 metrics.overall_aesthetic_quality !== undefined) && (
                 <div>
-                  <div className="font-semibold mb-1">Aesthetic Quality:</div>
+                  <div className="font-semibold mb-1">Aesthetic predictor / custom heuristics:</div>
                   <div className="space-y-1 text-muted-foreground">
                     {metrics.aesthetics_score !== undefined && (
                       <div>

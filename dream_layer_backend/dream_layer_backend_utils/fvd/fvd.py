@@ -14,23 +14,14 @@ import torch.nn.functional as F
 from scipy.linalg import sqrtm
 
 
-def load_i3d_pretrained(device=torch.device('cpu')):
-    """Load pretrained I3D model (TorchScript). Downloads on first use (~500MB)."""
-    i3d_weights_url = "https://www.dropbox.com/s/ge9e5ujwgetktms/i3d_torchscript.pt?dl=1"
-    filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'i3d_torchscript.pt')
-
-    if not os.path.exists(filepath):
-        print(f"Downloading I3D model to {filepath}...")
-        import requests
-        response = requests.get(i3d_weights_url, stream=True)
-        response.raise_for_status()
-        with open(filepath, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-        print("I3D model downloaded successfully.")
-
-    i3d = torch.jit.load(filepath).eval().to(device)
-    return i3d
+def load_i3d_pretrained(device=torch.device('cpu'), filepath=None, weights_sha256=None):
+    """Only explicitly provisioned, hash-verified I3D weights; no automatic download."""
+    from research.contracts import file_hash
+    if not filepath or not os.path.isfile(filepath):
+        raise ImportError("Explicit local I3D weights required")
+    if not weights_sha256 or file_hash(filepath) != weights_sha256:
+        raise ValueError("Expected I3D weights checksum required")
+    return torch.jit.load(filepath).eval().to(device)
 
 
 def preprocess_single(video, resolution=224):
@@ -99,14 +90,6 @@ def compute_stats(feats: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     return mu, sigma
 
 
-def frechet_distance(feats_fake: np.ndarray, feats_real: np.ndarray) -> float:
-    """Compute Frechet distance between two sets of features."""
-    mu_gen, sigma_gen = compute_stats(feats_fake)
-    mu_real, sigma_real = compute_stats(feats_real)
-    m = np.square(mu_gen - mu_real).sum()
-    if feats_fake.shape[0] > 1:
-        s, _ = sqrtm(np.dot(sigma_gen, sigma_real), disp=False)
-        fid = np.real(m + np.trace(sigma_gen + sigma_real - s * 2))
-    else:
-        fid = np.real(m)
-    return float(fid)
+def frechet_distance(feats_fake, feats_real):
+    from research.fid import frechet_from_features
+    return frechet_from_features(feats_fake, feats_real)

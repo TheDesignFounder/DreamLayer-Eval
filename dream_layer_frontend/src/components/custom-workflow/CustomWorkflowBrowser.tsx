@@ -3,8 +3,8 @@ import { Upload, FileText, X, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface CustomWorkflowBrowserProps {
-  onWorkflowChange: (workflow: any) => void;
-  currentWorkflow?: any;
+  onWorkflowChange: (workflow: import('@/types/api').CustomWorkflow) => void;
+  currentWorkflow?: import('@/types/api').CustomWorkflow;
 }
 
 const CustomWorkflowBrowser: React.FC<CustomWorkflowBrowserProps> = ({ 

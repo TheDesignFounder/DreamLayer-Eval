@@ -1,0 +1,4 @@
+# Add to core for the original Flask services and their offline tests.
+flask-socketio==5.5.1
+python-dotenv==1.1.1
+PyYAML==6.0.2

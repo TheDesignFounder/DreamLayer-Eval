@@ -1,0 +1,25 @@
+{
+  "license": "CC0-1.0",
+  "provenance": "Programmatically created fixtures, synthetic defects, no empirical findings",
+  "files": {
+    "adversarial.png": "c5d9d2ad4560c981387e4e99a9159738cf52658c10bcc772fb1ad45322776636",
+    "late defect.webm": "ec7c38dec9c63f701c70d0637c2e9c36a8d0bcff050347bd3ffa51a12dad5391",
+    "two circles.png": "486088ff53834254beeeabd5acd1d6d6d814eac13afcc068ac3d6b9d89f184dc",
+    "fast.webm": "681e19556bc555b47f931a9e06a9b9ce37495ec3e5a5592b36ad6d2be6c800d1",
+    "moving.webm": "4ce9db7d3fdf92d2591caa413e473ac3fdc0388b50f8642e8a9e997c29aa1fe0",
+    "shuffled.webm": "8e0f61026dde4ba320d7d36a677a49fccd5fcacd6c152d1c03dff3be57886130",
+    "frozen.webm": "96101ffdbe61968c486fda336f615833cf783709fb20b56356110d869d865445",
+    "corrupt.png": "af329c7ed695d7e9c67c757d8afd5e853372290166008a3e509b99d795182f15",
+    "one frame.webm": "6844eb8f04ef0dab8b6ab8755e0c29152d86d278fb5bde2844eae5626f77be58",
+    "zero caf\u00e9.png": "6506eac641360df85fbfe5f53674d1d36f8fefeff94c4f0e5e07e3a90f0f50db",
+    "same name/zero caf\u00e9.png": "f67c4a44aad08d299739a0944f3b0bcd879fde6b34f62521545de600b78e48cd"
+  },
+  "expected": {
+    "zero caf\u00e9.png": "Valid score zero for pixel_luminance",
+    "same name/zero caf\u00e9.png": "Same basename, different hash; score one",
+    "corrupt.png": "Deliberately invalid input",
+    "frozen.webm": "Zero motion; perfect narrow pixel stability",
+    "late defect.webm": "Red frame at frame 35 of 40",
+    "one frame.webm": "Insufficient adjacent temporal observations"
+  }
+}

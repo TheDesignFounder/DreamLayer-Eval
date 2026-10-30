@@ -11,7 +11,7 @@ from typing import List, Dict, Optional, Any
 from contextlib import contextmanager
 
 # Database file location
-DB_PATH = os.path.join(os.path.dirname(__file__), 'generation_history.db')
+DB_PATH = os.getenv('DREAMLAYER_HISTORY_DB', os.path.join(os.path.dirname(__file__), 'generation_history.db'))
 
 
 @contextmanager
