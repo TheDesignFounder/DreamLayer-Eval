@@ -10,12 +10,14 @@ is assumed.
 
 **Platform scope:** the research executor requires POSIX file locking. Use Python
 3.11 or 3.12 on Linux/macOS; native Windows execution is unsupported (use WSL2).
-Local validation is on Intel macOS. Linux/macOS CI is configured; hosted results
-must be checked on the pull request before claiming those platforms passed.
+Hosted checks passed on Ubuntu 24.04 and macOS 15 with both Python versions on
+2026-10-30, including Linux browser tests and the Windows unsupported-platform
+contract: [CI run](https://github.com/TheDesignFounder/DreamLayer-Eval/actions/runs/41041257464).
+Local model and live-provider smoke evidence was collected on Intel macOS.
 
 | Capability | Validation status |
 |---|---|
-| Offline import, metrics, synthetic judges, blinded review, analysis and replay | Tested locally, including real browser workflows |
+| Offline import, metrics, synthetic judges, blinded review, analysis and replay | 183 tests per hosted Linux/macOS Python combination; four real browser workflows on Linux |
 | CLIP and YOLO | Real CPU inference and offline repeats on synthetic fixture images; revision/weight hashes recorded |
 | Inception FID extractor | Previously exercised with real pretrained features; small synthetic inputs do not establish statistical quality |
 | Live OpenAI/Anthropic judges | 12 real image judgments passed across the two pinned snapshots, including pointwise/pairwise, cached resume and exact replay; paid failure/retry paths remain unverified |

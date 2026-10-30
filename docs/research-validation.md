@@ -1,6 +1,6 @@
 # Research validation
 
-This page separates executed checks from configured CI and unverified integrations.
+This page separates executed local/hosted checks from unverified integrations.
 Portable summaries live in `docs/validation/`; raw local logs, screenshots, HTML
 reports, databases and model files stay outside published documentation. Reproduce
 checks with the [contributor workflow](research-contributing.md).
@@ -66,18 +66,37 @@ Credential values were loaded into the process only; a scan found none in run ev
 
 ## Portability and distribution
 
-Local runs used Intel macOS. The workflow in `.github/workflows/research.yml`
-configures Linux/macOS with Python 3.11/3.12, frontend checks and Linux Playwright.
-It also checks that native Windows is explicitly rejected. The workflow passed
-actionlint 1.7.12 locally (shellcheck integration disabled). **Hosted CI has not
-been executed in this local archive**; green hosted checks are required before
-claiming those runner combinations passed. A Linux container runtime was unavailable
-locally. Native Windows execution remains unsupported.
+The [public hosted run on 2026-10-30](https://github.com/TheDesignFounder/DreamLayer-Eval/actions/runs/41041257464)
+passed all six jobs, after the same commit passed in a private staging repository.
+The [portable hosted summary](validation/hosted-ci.json) identifies the commit,
+jobs, artifact hashes and release downloads. Earlier JSON records retain their
+original dated "hosted CI not run" status.
+
+| Hosted check | Observed result |
+|---|---|
+| Ubuntu 24.04, Python 3.11 and 3.12 | 183 tests each; runtime artifacts unchanged; Ruff, API docs, public hygiene and ambiguity probe passed |
+| macOS 15, Python 3.11 and 3.12 | Same 183 tests and checks passed in both jobs |
+| Installed wheel | Exact fresh-database replay and zero records added on resume, in all four Python jobs |
+| Linux frontend and Chromium | Typecheck/build passed; lint 0 errors, 12 existing warnings; four browser tests passed |
+| Native Windows contract | Explicit unsupported-platform behavior passed; this does not establish Windows runtime support |
+
+The first private runs exposed missing FFmpeg setup, an Ubuntu runner newer than
+the pinned Playwright release supports, and browser fixtures that previously
+depended on a local demo run. CI now installs FFmpeg/ffprobe explicitly, pins
+Ubuntu 24.04/macOS 15, creates isolated browser fixtures and retains browser
+artifacts. Test assertions and research runtime behavior were unchanged. Checkout
+metadata now supplies the upstream URL for the already-pinned grid submodule.
+The workflow also passed actionlint 1.7.12 locally (shellcheck disabled).
 
 The research package is 1.1.0, record/bundle schema is 1, and SQLite migration
 version is 2. See [compatibility and migrations](research-schema.md). Distribution
 checks include an isolated wheel install and CLI replay, not only a successful
-build. The [release summary](validation/current.json) records those results.
+build. The [research-1.1.0 release](https://github.com/TheDesignFounder/DreamLayer-Eval/releases/tag/research-1.1.0)
+attaches the exact wheel and sdist hashes recorded in the
+[CLI follow-up](validation/cli-upgrade-errors.json), with a SHA256SUMS file.
+All research package bytes still match that wheel. Subsequent changes cover CI,
+browser fixture setup, checkout metadata and publication documentation; the
+attached distributions retain their original documentation snapshot.
 
 ## Historical evidence retained
 

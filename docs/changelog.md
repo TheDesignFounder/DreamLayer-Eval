@@ -5,10 +5,16 @@ All notable changes to DreamLayer AI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [research-1.1.0] - 2026-10-30
 
 ### Research workbench 1.1.0
 
+- Published after six hosted CI jobs passed: Linux/macOS Python 3.11/3.12,
+  the Windows unsupported-platform contract and four Linux browser workflows.
+  Install FFmpeg explicitly, pin supported runner images, generate isolated
+  browser fixtures and retain browser failure artifacts on fresh checkouts.
+- Restore the upstream URL for the existing pinned grid submodule so recursive
+  checkouts and GitHub Pages can initialize it.
 - Show refused evaluator upgrades as a single CLI error line with exit status 1,
   retaining the job error and successful results. Unexpected errors still surface
   normally for debugging.

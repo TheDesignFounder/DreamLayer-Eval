@@ -1,0 +1,155 @@
+{
+  "recorded_at": "2026-10-30T10:33:05.909959+00:00",
+  "status": "passed",
+  "repository": "TheDesignFounder/DreamLayer-Eval",
+  "commit": "cb8ee3e7b97e45bcd85551cffdc3b65f50ba9c2e",
+  "run_url": "https://github.com/TheDesignFounder/DreamLayer-Eval/actions/runs/41041257464",
+  "run_api_url": "https://api.github.com/repos/TheDesignFounder/DreamLayer-Eval/actions/runs/41041257464",
+  "private_staging_passed_before_public_push": true,
+  "workflow_sha256": "cf7308bde0f7f1d753e5d80ea6284d9e788f36495b4726aca52f82cb74edd2ab",
+  "jobs": [
+    {
+      "name": "windows-contract",
+      "conclusion": "success",
+      "url": "https://github.com/TheDesignFounder/DreamLayer-Eval/actions/runs/41041257464/job/124014342807"
+    },
+    {
+      "name": "frontend",
+      "conclusion": "success",
+      "url": "https://github.com/TheDesignFounder/DreamLayer-Eval/actions/runs/41041257464/job/124014343117"
+    },
+    {
+      "name": "Python 3.12 / macos-15",
+      "conclusion": "success",
+      "url": "https://github.com/TheDesignFounder/DreamLayer-Eval/actions/runs/41041257464/job/124014343155"
+    },
+    {
+      "name": "Python 3.11 / macos-15",
+      "conclusion": "success",
+      "url": "https://github.com/TheDesignFounder/DreamLayer-Eval/actions/runs/41041257464/job/124014343308"
+    },
+    {
+      "name": "Python 3.11 / ubuntu-24.04",
+      "conclusion": "success",
+      "url": "https://github.com/TheDesignFounder/DreamLayer-Eval/actions/runs/41041257464/job/124014343310"
+    },
+    {
+      "name": "Python 3.12 / ubuntu-24.04",
+      "conclusion": "success",
+      "url": "https://github.com/TheDesignFounder/DreamLayer-Eval/actions/runs/41041257464/job/124014343363"
+    }
+  ],
+  "offline_suites": [
+    {
+      "environment": "python-macos-15-3.11",
+      "python": "3.11.9",
+      "passed": 183,
+      "runtime_artifacts_changed": 0,
+      "wheel_replay_exact": true,
+      "resume_added_records": 0
+    },
+    {
+      "environment": "python-macos-15-3.12",
+      "python": "3.12.10",
+      "passed": 183,
+      "runtime_artifacts_changed": 0,
+      "wheel_replay_exact": true,
+      "resume_added_records": 0
+    },
+    {
+      "environment": "python-ubuntu-24.04-3.11",
+      "python": "3.11.17",
+      "passed": 183,
+      "runtime_artifacts_changed": 0,
+      "wheel_replay_exact": true,
+      "resume_added_records": 0
+    },
+    {
+      "environment": "python-ubuntu-24.04-3.12",
+      "python": "3.12.15",
+      "passed": 183,
+      "runtime_artifacts_changed": 0,
+      "wheel_replay_exact": true,
+      "resume_added_records": 0
+    }
+  ],
+  "frontend": {
+    "typecheck": "passed",
+    "lint_errors": 0,
+    "lint_warnings": 12,
+    "build": "passed",
+    "chromium_tests_passed": 4
+  },
+  "windows": {
+    "contract": "passed",
+    "native_execution_supported": false,
+    "wsl2_execution_tested": false
+  },
+  "artifacts": [
+    {
+      "name": "python-macos-15-3.11",
+      "id": 12970970172,
+      "sha256_digest": "sha256:292fac63f936f787c223c06d93050bf13d51fd5173590e85e0fc1d0c4faf6324",
+      "size_bytes": 2617
+    },
+    {
+      "name": "browser-validation",
+      "id": 12970467441,
+      "sha256_digest": "sha256:467a96ebdb7dcb2e080f9c0f65b1c035beda68c38a50d2c18812e1a92e80d9aa",
+      "size_bytes": 2052696
+    },
+    {
+      "name": "python-ubuntu-24.04-3.11",
+      "id": 12970437113,
+      "sha256_digest": "sha256:111d184624a92f9bc92ea06daac203134c670810c348e733dabeda7cc8481887",
+      "size_bytes": 2613
+    },
+    {
+      "name": "python-ubuntu-24.04-3.12",
+      "id": 12970232451,
+      "sha256_digest": "sha256:bdf04016580045124dc7554c6df45b70179004dec027354906672c6d875e3eb9",
+      "size_bytes": 2614
+    },
+    {
+      "name": "python-macos-15-3.12",
+      "id": 12970113461,
+      "sha256_digest": "sha256:b4042ab9925b04fb2f5f0d96d7365916890d393a72f3eb8fad4d741543170b58",
+      "size_bytes": 2618
+    }
+  ],
+  "ci_setup_fixes": [
+    "Install FFmpeg/ffprobe on the runners",
+    "Pin Ubuntu 24.04 and macOS 15",
+    "Generate isolated browser fixtures on fresh checkouts",
+    "Upload hidden browser artifact directories explicitly"
+  ],
+  "research_runtime_changed_since_review": false,
+  "pages": {
+    "conclusion": "success",
+    "status": "completed",
+    "url": "https://github.com/TheDesignFounder/DreamLayer-Eval/actions/runs/41041253948"
+  },
+  "distribution": {
+    "release_tag": "research-1.1.0",
+    "sha256": {
+      "dreamlayer_research-1.1.0-py3-none-any.whl": "b2f7059e03d46b2bd5c19eb91a558cef492e681cba3b25fbdf989459d2c47b75",
+      "dreamlayer_research-1.1.0.tar.gz": "8766f8fce77aaafca7f7da8b97c0597d6204c8a1f17434da2407cd21d18ad6ea"
+    },
+    "research_package_files_matching_wheel": 32,
+    "source": "Exact distributions recorded in cli-upgrade-errors.json; publication documentation and CI setup are newer than their documentation snapshot."
+  },
+  "archive_files_verified_unchanged": 202,
+  "local_servers_stopped": [
+    5055,
+    8080
+  ],
+  "scratch_records_preserved": 496,
+  "additional_paid_provider_calls": 0,
+  "unverified": [
+    "VQAScore/DINO/LPIPS/I3D inference",
+    "Diffusion-based ComfyUI generation",
+    "Original historical runtime database migration",
+    "Provider billing and paid fault/retry scenarios",
+    "Native Windows runtime (unsupported); WSL2 runtime"
+  ]
+}
