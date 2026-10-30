@@ -21,10 +21,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-24.04, macos-15]
         python: ['3.11', '3.12']
     steps:
       - uses: actions/checkout@v7.0.1
+      - name: Install video tools on Linux
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install video tools on macOS
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg
+      - name: Verify video tools
+        run: ffmpeg -version && ffprobe -version
       - uses: actions/setup-python@v7.1.0
         with:
           python-version: ${{ matrix.python }}
@@ -65,7 +73,8 @@ jobs:
       - name: Assert Windows is explicitly unsupported
         run: python scripts/research_platform_check.py --expect-unsupported
   frontend:
-    runs-on: ubuntu-latest
+    # The pinned Playwright release supports Ubuntu 24.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       RESEARCH_API_URL: http://127.0.0.1:5057
@@ -73,6 +82,8 @@ jobs:
       DLE_VALIDATION_DIR: ${{ github.workspace }}/.research/ci-browser
     steps:
       - uses: actions/checkout@v7.0.1
+      - name: Install video tools
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - uses: actions/setup-python@v7.1.0
         with:
           python-version: '3.11'

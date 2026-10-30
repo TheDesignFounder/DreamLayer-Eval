@@ -1,0 +1,3 @@
+[submodule "comfy-easy-grids"]
+	path = comfy-easy-grids
+	url = https://github.com/shockz0rz/comfy-easy-grids.git
