@@ -106,4 +106,5 @@ jobs:
         with:
           name: browser-validation
           path: .research/ci-browser*
+          include-hidden-files: true
           retention-days: 14

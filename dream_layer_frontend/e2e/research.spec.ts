@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { api, artifactPath } from './artifacts';
 
 const root = path.resolve('..');
-const fixtures = path.join(root, '.research/fixtures');
+const fixtures = process.env.DLE_FIXTURE_DIR || path.join(root, '.research/fixtures');
 
 test('actual UI: import → configure → run → inspect → two raters → analyze → bundle replay', async ({ page, request }) => {
   const errors: string[] = [];

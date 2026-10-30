@@ -55,8 +55,10 @@ cd ..
 .venv-research/bin/python scripts/research_browser_check.py
 ```
 
-The launcher requires free ports 5057/8082, starts isolated Flask/Vite servers and
-stops only its own processes. It requires a fresh `.research/ci-browser-servers`
+The launcher requires free ports 5057/8082, creates synthetic fixtures inside its
+run directory, starts isolated Flask/Vite servers and stops only its own processes.
+It passes that fixture directory to Playwright through `DLE_FIXTURE_DIR`, so a fresh
+checkout needs no earlier demo run. It requires a fresh `.research/ci-browser-servers`
 directory; archive an old run before repeating. Playwright writes to a new dated
 directory in `.research/validation/browser-runs/`; `DLE_VALIDATION_DIR` may name
 another fresh directory. Existing directories are rejected to preserve evidence.

@@ -4,13 +4,14 @@ import { writeFileSync } from 'node:fs';
 import { api, artifactPath } from './artifacts';
 
 const root=path.resolve('..');
+const fixtures=process.env.DLE_FIXTURE_DIR || path.join(root,'.research/fixtures');
 const base=api+'/api/research';
 
 test('review fixes: criteria preview, failed attempts, reconciliation, comparisons, blinded export and replay', async ({page,request}) => {
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   const rubric={version:'browser-review-1',criteria:[{id:'task',description:'Visible task fulfillment'}]};
   const config={schema_version:1,name:'Review fixes '+Date.now(),models:['fixture'],prompts:[{id:'p',text:'two red cars',group_id:'p',split:'exploratory'}],
-    assets:[{path:path.join(root,'.research/fixtures/zero café.png'),prompt_id:'p',model:'fixture'}],metrics:[{id:'pixel_luminance'},{id:'vqascore'}],
+    assets:[{path:path.join(fixtures,'zero café.png'),prompt_id:'p',model:'fixture'}],metrics:[{id:'pixel_luminance'},{id:'vqascore'}],
     judges:[{provider:'synthetic',model:'deliberately-invalid-fixture',rubric,synthetic_response:{labels:{bad:'pass'},explanation:'Malformed fixture',evidence:[]}}]};
   await page.goto('/research');
   await page.getByLabel('Experiment configuration, including editable criteria').fill(JSON.stringify(config));

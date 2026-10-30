@@ -19,10 +19,22 @@ def main():
         with socket.socket() as sock:
             if sock.connect_ex(("127.0.0.1", port)) == 0:
                 raise RuntimeError(f"Port {port} is occupied; no existing process will be stopped")
+    fixtures = work / "fixtures"
+    subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from research.fixtures import create; import sys; create(sys.argv[1])",
+            str(fixtures),
+        ],
+        cwd=root,
+        check=True,
+    )
     env = {
         **os.environ,
         "RESEARCH_API_URL": "http://127.0.0.1:5057",
         "PLAYWRIGHT_BASE_URL": "http://127.0.0.1:8082",
+        "DLE_FIXTURE_DIR": str(fixtures),
     }
     processes, logs = [], []
     try:
